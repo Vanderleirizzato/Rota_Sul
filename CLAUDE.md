@@ -54,6 +54,7 @@ Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais do
 - `W`/`↑` acelerar, `S`/`↓` frear e ré, `A`/`D` ou `←`/`→` direção.
 - `Espaço` freio de mão (drift), `Shift` nitro.
 - `R` reposicionar o carro na pista, `T` (re)começar a corrida da largada, `C` trocar câmera, `Esc` pausar.
+- `E` desce do carro no passeio (com o carro parado) e entra de novo perto dele. A pé: `W`/`S` anda, `A`/`D` vira, `Shift` corre, `Espaço` pula, `R` volta para o lado do carro.
 - `Enter` no marcador de missão começa a corrida; na pausa, `Q` abandona a corrida; na chegada, `Enter` volta a passear e `N` segue para a próxima fase.
 
 ## Arquitetura Modular

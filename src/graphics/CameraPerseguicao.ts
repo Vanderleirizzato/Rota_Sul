@@ -20,6 +20,11 @@ const CAPO = { altura: 1.4, frente: 0.3 };
 export class CameraPerseguicao {
   readonly camera: PerspectiveCamera;
   modo: ModoCamera = 'perseguicao';
+  /**
+   * Seguindo o personagem a pé (e não o carro): fica mais perto e mais baixa.
+   * A pé não existe câmera de capô; ela vira a de perseguição.
+   */
+  aPe = false;
   private anguloSuave = 0;
   private fovAtual = tuning.camera.fovBase;
   private iniciada = false;
@@ -36,7 +41,6 @@ export class CameraPerseguicao {
     this.modo = MODOS[(MODOS.indexOf(this.modo) + 1) % MODOS.length];
   }
 
-  /** Teleporta a câmera para trás do carro (após reposicionar, por exemplo). */
   /**
    * Faz a câmera tremer (batida). O tremor é um deslocamento aleatório que
    * diminui a cada quadro. Ele é somado DEPOIS da suavização e desfeito no
@@ -47,6 +51,7 @@ export class CameraPerseguicao {
     this.tremor = Math.min(1, Math.max(this.tremor, intensidade));
   }
 
+  /** Teleporta a câmera para trás do carro (após reposicionar, por exemplo). */
   reiniciar(): void {
     this.iniciada = false;
   }
@@ -74,7 +79,7 @@ export class CameraPerseguicao {
     this.camera.fov = this.fovAtual;
     this.camera.updateProjectionMatrix();
 
-    if (this.modo === 'capo') {
+    if (this.modo === 'capo' && !this.aPe) {
       const frente = new Vector3(0, 0, 1).applyQuaternion(rotCarro);
       const cima = new Vector3(0, 1, 0).applyQuaternion(rotCarro);
       this.camera.position.copy(posCarro).addScaledVector(cima, CAPO.altura).addScaledVector(frente, CAPO.frente);
@@ -91,10 +96,10 @@ export class CameraPerseguicao {
     this.anguloSuave += menorDiferencaAngulo(this.anguloSuave, anguloCarro) * suavizar(c.suavidadeDirecao, dt);
 
     const mult = this.modo === 'longe' ? c.multiplicadorLonge : 1;
-    const distancia = (c.distancia + c.distanciaExtraVelocidade * fracaoVelocidade) * mult;
+    const distancia = (this.aPe ? c.distanciaAPe : c.distancia + c.distanciaExtraVelocidade * fracaoVelocidade) * mult;
     const frenteSuave = new Vector3(Math.sin(this.anguloSuave), 0, Math.cos(this.anguloSuave));
     const alvo = posCarro.clone().addScaledVector(frenteSuave, -distancia);
-    alvo.y += c.altura * mult;
+    alvo.y += (this.aPe ? c.alturaAPe : c.altura) * mult;
 
     if (!this.iniciada) {
       this.camera.position.copy(alvo);
@@ -102,7 +107,9 @@ export class CameraPerseguicao {
     } else {
       this.camera.position.lerp(alvo, suavizar(c.suavidadePosicao, dt));
     }
-    this.camera.lookAt(posCarro.clone().addScaledVector(frenteSuave, c.olharAFrente).setY(posCarro.y + 1));
+    // A pé, olha na altura da cabeça; no carro, um pouco acima do teto.
+    const olhar = this.aPe ? c.olharAFrenteAPe : c.olharAFrente;
+    this.camera.lookAt(posCarro.clone().addScaledVector(frenteSuave, olhar).setY(posCarro.y + (this.aPe ? 1.5 : 1)));
   }
 }
 

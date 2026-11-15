@@ -348,6 +348,28 @@ export const tuning = {
     nitro: 0.1,
   },
 
+  aPe: {
+    // O personagem que desce do carro (tecla E), no modo passeio.
+    /** Velocidade andando (m/s). 1,4 é o passo de uma pessoa; mais alto: anda "apressado". */
+    velocidadeAndar: 1.8,
+    /** Velocidade correndo, com Shift (m/s). Muito alto: a animação de correr "patina" no chão. */
+    velocidadeCorrer: 5.5,
+    /** Velocidade andando de costas, com S (m/s). */
+    velocidadeRe: 1.2,
+    /** Rapidez para virar com A/D (radianos por segundo). Mais alto: gira no lugar como pião. */
+    giro: 2.8,
+    /** Velocidade para cima no pulo (m/s). Com a gravidade de 9,8: 5 m/s ≈ 1,3 m de altura. */
+    forcaPulo: 5,
+    /** Degrau mais alto (m) que ele sobe sem pular (meio-fio, escada). Alto demais: "escala" muros. */
+    degrauMaximo: 0.4,
+    /** Rampa mais inclinada (graus) que ele sobe andando. Acima disso, escorrega. */
+    rampaMaxima: 50,
+    /** Só desce com o carro abaixo desta velocidade (km/h): ninguém pula de um carro andando. */
+    velocidadeParaDescerKmh: 8,
+    /** Distância (m) do carro em que o E faz o personagem entrar nele. */
+    distanciaParaEntrar: 3.5,
+  },
+
   camera: {
     /** Distância atrás do carro (m) quando parado. */
     distancia: 6.5,
@@ -372,6 +394,12 @@ export const tuning = {
     olharAFrente: 4,
     /** Multiplicador de distância e altura na câmera "longe". */
     multiplicadorLonge: 1.7,
+    /** A pé: distância atrás do personagem (m). Mais perto que no carro, que é bem maior. */
+    distanciaAPe: 3.6,
+    /** A pé: altura da câmera acima dos pés do personagem (m). */
+    alturaAPe: 2.1,
+    /** A pé: ponto para onde a câmera olha, à frente do personagem (m). */
+    olharAFrenteAPe: 2,
   },
 };
 

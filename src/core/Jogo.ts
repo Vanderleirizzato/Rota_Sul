@@ -45,6 +45,8 @@ import { irParaFase, irParaMenu } from './Estados';
 import { colocarPlaca } from '../graphics/Placa';
 import { aplicarSuperVelocidade, liberarModoDev, modoDevLiberado } from './ModoDev';
 import { MensagemEasterEgg } from '../ui/MensagemEasterEgg';
+import { Personagem } from './Personagem';
+import type { ComandosAPe } from '../physics/PersonagemFisico';
 
 /** O carro do jogador: física e visual andam juntos. */
 interface Carro {
@@ -57,6 +59,9 @@ interface Carro {
 const ALTURA_REPOSICIONAR = 1;
 /** O marcador "seguir viagem" fica este tanto (m) depois da linha de chegada. */
 const DEPOIS_DA_CHEGADA = 30;
+/** Comandos do carro enquanto o jogador está a pé: parado, com o freio de mão puxado. */
+const CARRO_ESTACIONADO: ComandosCarro = { acelerar: false, frear: false, direcao: 0, freioMao: true, nitro: false };
+const EIXO_Y = new Vector3(0, 1, 0);
 
 /**
  * Junta todas as peças e roda o laço principal.
@@ -83,6 +88,10 @@ export class Jogo {
   private readonly telaFim = new TelaFimFase();
   private readonly mensagemEasterEgg = new MensagemEasterEgg();
   private carro!: Carro;
+  /** Quem desce do carro com a tecla E (Etapa 9). */
+  private personagem!: Personagem;
+  /** Pulo pedido e ainda não feito: espera o próximo passo de física (ver atualizar). */
+  private puloPendente = false;
   private cenario!: Cenario;
   /** Só existe nas fases com chegada (a pista de teste não tem corrida). */
   private corrida: Corrida | null = null;
@@ -117,6 +126,8 @@ export class Jogo {
   // Objetos reaproveitados a cada quadro (evita criar lixo para o coletor).
   private readonly posDesenho = new Vector3();
   private readonly rotDesenho = new Quaternion();
+  /** Giro do personagem como quatérnio (o cenário e a câmera pedem nesse formato). */
+  private readonly rotPersonagem = new Quaternion();
 
   private constructor(
     luz: ConfigLuz,
@@ -175,6 +186,8 @@ export class Jogo {
     const largada = jogo.cenario.largada;
     // O carro escolhido na garagem do menu.
     jogo.carro = await jogo.criarCarro(lerEscolhas().carro, largada.posicao, largada.angulo);
+    // Começa dentro do carro (invisível e fora da física até descer).
+    jogo.personagem = await Personagem.criar(jogo.cena, jogo.fisica.mundo);
     if (jogo.cenario.chegada !== null) {
       // O jogo começa passeando; a corrida começa no marcador, na largada.
       jogo.corrida = new Corrida(jogo.cenario.chegada);
@@ -220,22 +233,34 @@ export class Jogo {
     this.tempoTotal += dt;
 
     this.acompanharPista(dt);
-    const comandos = this.comandosDaCorrida(this.lerComandos());
+    const personagem = this.personagem;
+    const aPe = personagem.ativo;
+    if (aPe) this.acompanharPersonagem();
+    // A pé, o carro fica estacionado e os comandos vão para o personagem.
+    const comandos = aPe ? CARRO_ESTACIONADO : this.comandosDaCorrida(this.lerComandos());
+    const comandosAPe = aPe ? this.lerComandosAPe() : null;
     const carro = this.carro;
     const fisico = carro.fisico;
     this.batidaNoQuadro = 0;
     const alfa = this.loop.avancar(dt, (passo) => {
       fisico.guardarEstadoAnterior();
       fisico.atualizar(passo, comandos);
-      const v = fisico.corpo.linvel();
-      this.estadoCarro.posicao.copy(fisico.posicaoAtual);
-      this.estadoCarro.rotacao.copy(fisico.rotacaoAtual);
-      this.estadoCarro.velocidade.set(v.x, v.y, v.z);
-      // O cenário reage ao carro: trânsito anda, e o que ele vai atingir vira objeto solto.
+      if (comandosAPe) {
+        personagem.guardarEstadoAnterior();
+        // O pulo vale para UM passo só (senão, num quadro com dois passos, pularia duas vezes).
+        comandosAPe.pular = this.puloPendente;
+        this.puloPendente = false;
+        personagem.passoFisica(passo, comandosAPe);
+      }
+      this.preencherEstadoJogador(aPe);
+      // O cenário reage a quem está no comando (carro ou personagem): o
+      // trânsito freia, as peças e o troféu são pegos, e o que o carro vai
+      // atingir vira objeto solto.
       this.cenario.passoFisica(passo, this.estadoCarro);
       const antes = fisico.corpo.linvel();
       this.fisica.passo();
       fisico.guardarEstado();
+      if (aPe) personagem.guardarEstado();
       // Batida = a velocidade muda de repente num só passo. Motor e freio
       // mudam a velocidade aos pouquinhos; só uma pancada muda vários m/s de
       // uma vez. Só a parte horizontal: pousar de um salto não conta.
@@ -269,14 +294,25 @@ export class Jogo {
       acelerando: comandos.acelerar,
       derrapagem: fisico.intensidadeDerrapagem,
       nitro: fisico.nitroLigado,
+      motorLigado: !aPe,
     });
     this.efeitos.atualizar(dt, fisico, carro.visual.escapamentos, this.posDesenho, this.rotDesenho);
 
-    this.camera.atualizar(dt, this.posDesenho, this.rotDesenho, fisico.anguloHorizontal, fisico.velocidade, fisico.nitroLigado);
+    // "Foco": quem a câmera segue, a sombra acompanha e o cenário desenha em volta.
+    let foco = this.posDesenho;
+    this.camera.aPe = aPe;
+    if (aPe) {
+      personagem.desenhar(dt, alfa);
+      foco = personagem.pe;
+      this.rotPersonagem.setFromAxisAngle(EIXO_Y, personagem.angulo);
+      this.camera.atualizar(dt, foco, this.rotPersonagem, personagem.angulo, 0, false);
+    } else {
+      this.camera.atualizar(dt, this.posDesenho, this.rotDesenho, fisico.anguloHorizontal, fisico.velocidade, fisico.nitroLigado);
+    }
     this.efeitos.ajustarEscala(this.camera.camera, this.renderizador.domElement.height);
-    this.iluminacao.seguir(this.posDesenho);
+    this.iluminacao.seguir(foco);
     this.ceu.atualizar(this.camera.camera.position, this.tempoTotal);
-    this.cenario.atualizar(dt, this.camera.camera, this.renderizador.domElement.height, this.posDesenho, alfa);
+    this.cenario.atualizar(dt, this.camera.camera, this.renderizador.domElement.height, foco, alfa);
     this.verPecas();
     this.atualizarCorrida(dt);
     this.hud.atualizar({
@@ -289,6 +325,7 @@ export class Jogo {
       derrapando: fisico.derrapando,
       camera: NOMES_CAMERA[this.camera.modo],
     });
+    this.hud.mostrarAPe(aPe);
 
     this.posProcessamento.desenhar();
     this.entrada.fimDoQuadro();
@@ -359,8 +396,8 @@ export class Jogo {
       const proxima = this.proxima;
       if (t.apertou('proximaFase') && proxima && faseEstaLiberada(proxima)) irParaFase(proxima);
       if (t.apertou('menu')) irParaMenu();
-    } else if (this.passeando && t.apertou('confirmar')) {
-      // Dentro de um marcador e devagar: viaja ou começa a corrida.
+    } else if (this.passeando && !this.personagem.ativo && t.apertou('confirmar')) {
+      // Dentro de um marcador e devagar (e de carro!): viaja ou começa a corrida.
       const proxima = this.proxima;
       const v = this.infoViagem;
       const m = this.infoMarcador;
@@ -368,11 +405,88 @@ export class Jogo {
       else if (m.dentro && !m.rapido) this.reiniciarCorrida();
     }
     if (t.apertou('trocarCamera')) this.camera.proximoModo();
-    if (t.apertou('reposicionar')) this.reposicionar();
+    if (t.apertou('entrarSair')) this.entrarOuSair();
     if (t.apertou('reiniciar')) this.reiniciarCorrida();
+    if (this.personagem.ativo) {
+      // A pé, R leva de volta para o lado do carro (perdido, preso num buraco...).
+      if (t.apertou('reposicionar')) this.personagemAoLadoDoCarro();
+      // Guardado aqui e gasto no próximo passo de física (ver atualizar).
+      if (t.apertou('freioMao')) this.puloPendente = true;
+      return;
+    }
+    if (t.apertou('reposicionar')) this.reposicionar();
     if (t.apertou('carro1')) void this.trocarCarro('carro1');
     if (t.apertou('carro2')) void this.trocarCarro('carro2');
     if (t.apertou('carro3')) void this.trocarCarro('carro3');
+  }
+
+  // ---------------------------------------------------------------------------
+  // A pé (Etapa 9)
+  // ---------------------------------------------------------------------------
+
+  /** Tecla E: desce do carro parado (só passeando) ou, a pé e perto dele, entra. */
+  private entrarOuSair(): void {
+    const f = this.carro.fisico;
+    if (this.personagem.ativo) {
+      if (this.personagem.pertoDe(f.posicaoAtual)) this.subirNoCarro();
+      else this.hudCorrida?.avisar('🚗 Chegue perto do carro para entrar');
+      return;
+    }
+    // Na corrida, descer seria trapaça (e o cronômetro continuaria correndo).
+    if (!this.passeando) return;
+    if (Math.abs(f.velocidade) * 3.6 > tuning.aPe.velocidadeParaDescerKmh) {
+      this.hudCorrida?.avisar('✋ Pare o carro para descer');
+      return;
+    }
+    this.personagemAoLadoDoCarro();
+    this.camera.reiniciar();
+  }
+
+  /** Põe o personagem na porta do carro (descer, ou voltar com R / depois de cair na água). */
+  private personagemAoLadoDoCarro(): void {
+    const f = this.carro.fisico;
+    this.personagem.descer(f.posicaoAtual, f.anguloHorizontal, this.carro.visual.geometria.meiasMedidas.x, f.corpo);
+    this.puloPendente = false;
+  }
+
+  private subirNoCarro(): void {
+    this.personagem.subir();
+    this.camera.reiniciar();
+  }
+
+  /** A pé: W/S anda, A/D vira, Shift corre (Espaço pula: ver tratarTeclasDeUmToque). */
+  private lerComandosAPe(): ComandosAPe {
+    const t = this.entrada;
+    return {
+      frente: (t.segurando('acelerar') ? 1 : 0) - (t.segurando('frear') ? 1 : 0),
+      giro: t.direcao(),
+      correr: t.segurando('nitro'),
+      pular: false,
+    };
+  }
+
+  /** Caiu na água ou atravessou o chão a pé: volta para o lado do carro. */
+  private acompanharPersonagem(): void {
+    const p = this.personagem.centro;
+    const chao = this.cenario.alturaChao(p.x, p.z);
+    const caiu = this.cenario.naAgua(p) || (chao !== null && p.y < chao - tuning.passeio.abaixoDoChao) || p.y < -50;
+    if (caiu) this.personagemAoLadoDoCarro();
+  }
+
+  /** O que o cenário enxerga neste passo: o carro, ou o personagem quando está a pé. */
+  private preencherEstadoJogador(aPe: boolean): void {
+    const e = this.estadoCarro;
+    if (aPe) {
+      e.posicao.copy(this.personagem.centro);
+      e.rotacao.setFromAxisAngle(EIXO_Y, this.personagem.anguloAtual);
+      e.velocidade.copy(this.personagem.velocidade);
+      return;
+    }
+    const f = this.carro.fisico;
+    const v = f.corpo.linvel();
+    e.posicao.copy(f.posicaoAtual);
+    e.rotacao.copy(f.rotacaoAtual);
+    e.velocidade.set(v.x, v.y, v.z);
   }
 
   // ---------------------------------------------------------------------------
@@ -482,12 +596,15 @@ export class Jogo {
   private conviteAtual(): Convite | null {
     const proxima = this.proxima;
     const v = this.infoViagem;
+    // A pé, o marcador mostra o que é, mas viajar e correr é de carro.
+    const aPe = this.personagem.ativo;
+    const deCarro = 'Volte para o carro (<kbd>E</kbd>) e pare aqui';
     if (this.marcadorViagem && v.dentro && proxima) {
       return {
         rotulo: '🧭 SEGUIR VIAGEM',
         nome: FASES[proxima].nome,
         detalhe: FASES[proxima].local,
-        acao: v.rapido ? 'Pare no marcador para viajar' : '<kbd>Enter</kbd> viajar &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
+        acao: aPe ? deCarro : v.rapido ? 'Pare no marcador para viajar' : '<kbd>Enter</kbd> viajar &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
       };
     }
     const m = this.infoMarcador;
@@ -501,24 +618,27 @@ export class Jogo {
       rotulo: '🏁 CORRIDA',
       nome: this.cenario.nome,
       detalhe: (this.recorde === null ? 'Sem recorde ainda' : `Recorde: ${formatarTempo(this.recorde)}`) + linhaMeta,
-      acao: m.rapido ? 'Pare no marcador para correr' : '<kbd>Enter</kbd> correr &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
+      acao: aPe ? deCarro : m.rapido ? 'Pare no marcador para correr' : '<kbd>Enter</kbd> correr &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
     };
   }
 
   /** Distância e direção de um marcador visto do carro. */
   private medirMarcador(posicao: Vector3, m: InfoMarcador): void {
+    // A bússola aponta a partir de quem está no comando: o carro ou o personagem.
     const f = this.carro.fisico;
-    const dx = posicao.x - f.posicaoAtual.x;
-    const dz = posicao.z - f.posicaoAtual.z;
+    const aPe = this.personagem.ativo;
+    const origem = aPe ? this.personagem.centro : f.posicaoAtual;
+    const dx = posicao.x - origem.x;
+    const dz = posicao.z - origem.z;
     m.distancia = Math.hypot(dx, dz);
     // Os dois ângulos contam a partir do +Z, girando para o +X (que, olhando
     // para +Z, fica à ESQUERDA). Na tela, girar positivo é para a direita:
     // por isso o sinal de menos.
-    let relativo = Math.atan2(dx, dz) - f.anguloHorizontal;
+    let relativo = Math.atan2(dx, dz) - (aPe ? this.personagem.anguloAtual : f.anguloHorizontal);
     relativo = Math.atan2(Math.sin(relativo), Math.cos(relativo)); // volta para -π..π
     m.direcao = -relativo;
     m.dentro = m.distancia < tuning.corrida.raioMarcador;
-    m.rapido = Math.abs(f.velocidade) * 3.6 > tuning.corrida.velocidadeParaComecarKmh;
+    m.rapido = !aPe && Math.abs(f.velocidade) * 3.6 > tuning.corrida.velocidadeParaComecarKmh;
   }
 
   /** O marcador "seguir viagem" fica logo depois da linha de chegada. */
@@ -556,6 +676,8 @@ export class Jogo {
 
   /** Vai para a largada e começa a contagem (vale para a 1ª vez e para "de novo"). */
   private reiniciarCorrida(): void {
+    // A pé: entra no carro antes (corrida é de carro!).
+    if (this.personagem.ativo) this.subirNoCarro();
     const { posicao, angulo } = this.cenario.largada;
     this.carro.fisico.reposicionar(posicao.clone(), angulo);
     this.camera.reiniciar();

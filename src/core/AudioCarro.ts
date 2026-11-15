@@ -31,6 +31,8 @@ export interface EstadoSom {
   /** Derrapagem dos pneus (0 a 1). */
   derrapagem: number;
   nitro: boolean;
+  /** Motor ligado? A pé, o carro fica desligado: só se ouve o resto (bipes, batidas). */
+  motorLigado: boolean;
 }
 
 export class AudioCarro {
@@ -79,7 +81,9 @@ export class AudioCarro {
     const giro = e.rpm / e.rpmMaximo;
     const corte = 300 + giro * 1800 + (e.acelerando ? 1400 : 0);
     this.motor.filtro.frequency.setTargetAtTime(corte, agora, SUAVIZACAO);
-    if (agora > this.fimDaTroca) {
+    if (!e.motorLigado) {
+      this.motor.volume.gain.setTargetAtTime(0, agora, 0.15);
+    } else if (agora > this.fimDaTroca) {
       this.motor.volume.gain.setTargetAtTime((e.acelerando ? 0.22 : 0.12) + giro * 0.1, agora, SUAVIZACAO);
     }
 

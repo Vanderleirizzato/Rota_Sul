@@ -262,3 +262,7 @@
 .hud-aviso.visivel { opacity: 1; transform: translate(-50%, 0); }
 .hud-aviso b { color: #ffcc33; }
 .hud-aviso small { display: block; opacity: 0.8; font-size: 15px; }
+
+/* A pé: velocímetro e nitro são do carro, então somem (com um esmaecer rápido). */
+.hud { transition: opacity 0.25s; }
+.hud.a-pe { opacity: 0; }

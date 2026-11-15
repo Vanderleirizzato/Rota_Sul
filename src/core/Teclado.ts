@@ -19,6 +19,8 @@ export const TECLAS = {
   /** Na tela de chegada: segue viagem para a próxima fase. */
   proximaFase: ['KeyN'],
   trocarCamera: ['KeyC'],
+  /** No passeio: desce do carro e anda a pé; perto do carro, entra de novo. A pé, Shift corre e Espaço pula. */
+  entrarSair: ['KeyE'],
   carro1: ['Digit1', 'Numpad1'],
   carro2: ['Digit2', 'Numpad2'],
   carro3: ['Digit3', 'Numpad3'],

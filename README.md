@@ -45,7 +45,10 @@ A viagem começa sempre em **Foz do Iguaçu**, em **modo passeio**: o mapa é li
 | Pausar | Esc | Start |
 | Voltar ao menu (na pausa ou no fim) | M | B |
 | Trocar de carro | 1 / 2 / 3 | |
+| Descer do carro / entrar de novo (no passeio) | E | LB |
 | Painel de tuning (Modo Dev) | F2 | |
+
+**A pé** (depois do E): W/S anda, A/D vira, Shift corre, Espaço pula e R volta para o lado do carro. Dá para pegar peças a pé, mas corrida e viagem são de carro.
 
 No jogo publicado, o F2 só funciona depois de achar o segredo do porto. 🏆
 

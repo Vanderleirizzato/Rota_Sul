@@ -11,7 +11,7 @@ import type { Acao } from './Teclado';
 // Os números dos botões seguem o "mapeamento padrão" (Xbox, PlayStation e a
 // maioria dos genéricos no navegador):
 //   0 = A / ✕    1 = B / ○    2 = X / □    3 = Y / △
-//   6 = gatilho esquerdo (LT/L2)    7 = gatilho direito (RT/R2)
+//   4 = LB/L1    5 = RB/R1    6 = gatilho esquerdo (LT/L2)    7 = gatilho direito (RT/R2)
 //   8 = Back/Select    9 = Start    12-15 = setas (cima, baixo, esquerda, direita)
 // Trocar um botão de função é editar a tabela BOTOES abaixo.
 // =============================================================================
@@ -26,6 +26,7 @@ const BOTOES: Partial<Record<Acao, number[]>> = {
   reposicionar: [2],
   abandonar: [2], // na pausa: X abandona a corrida
   trocarCamera: [3],
+  entrarSair: [4], // LB: desce do carro / entra de novo
   proximaFase: [3], // na tela de chegada: Y segue viagem
   reiniciar: [8],
   pausar: [9],

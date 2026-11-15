@@ -39,6 +39,8 @@ import type { Tracado } from './Tracado';
 const FRACAO_PISO_PONTE = 0.5;
 /** Guarda-corpo: altura (m) e quanto passa da ponte em cada ponta. */
 const GUARDA_CORPO = { altura: 1.0, sobra: 6 };
+/** Quanto (m) a água entra em cada margem, além da largura do rio. */
+const SOBRA_MARGEM = 5;
 /** Comprimento da água rio abaixo (m). */
 const RIO_ABAIXO = 600;
 /** Velocidade aparente da correnteza e da queda d'água (repetições da textura por segundo). */
@@ -69,6 +71,8 @@ export class Rio {
   /** Direção ao longo da cachoeira (atravessando o rio). */
   private readonly atravessando: Vector3;
   private readonly baseCachoeira: Vector3;
+  /** Onde o rio cruza a pista, na altura da água. */
+  private readonly centro: Vector3;
   private acumuladoNevoa = 0;
 
   constructor(
@@ -79,6 +83,7 @@ export class Rio {
   ) {
     const i = tracado.indiceEm(rio.distancia);
     const centro = tracado.pontos[i].clone().setY(rio.nivel);
+    this.centro = centro;
     this.rioAcima = tracado.esquerdas[i].clone().multiplyScalar(rio.cachoeira.lado === 'esquerda' ? 1 : -1);
     this.atravessando = tracado.tangentes[i].clone().setY(0).normalize();
     this.baseCachoeira = centro.clone().addScaledVector(this.rioAcima, rio.cachoeira.distancia);
@@ -90,6 +95,21 @@ export class Rio {
     this.nevoa.objeto.layers.set(CAMADA_EFEITOS);
     cena.add(this.nevoa.objeto);
     this.criarGuardaCorpo(i);
+  }
+
+  /**
+   * O ponto (x, z) fica em cima da faixa de água do rio? Serve para o
+   * "caiu na água". Não basta olhar se o chão está abaixo do nível da água:
+   * o leito da estrada também é cavado, e em Foz o chão embaixo da largada
+   * fica abaixo do nível do rio, longe de qualquer água.
+   */
+  cobre(x: number, z: number): boolean {
+    const dx = x - this.centro.x;
+    const dz = z - this.centro.z;
+    const aoLongo = dx * this.rioAcima.x + dz * this.rioAcima.z;
+    const atravessado = dx * this.atravessando.x + dz * this.atravessando.z;
+    // A mesma faixa do plano de água (ver criarAgua), com a sobra das margens.
+    return aoLongo > -RIO_ABAIXO && aoLongo < this.rio.cachoeira.distancia && Math.abs(atravessado) < this.rio.largura / 2 + SOBRA_MARGEM;
   }
 
   /** Parte que depende de arquivos (ponte e paredões). */
@@ -132,7 +152,7 @@ export class Rio {
 
   private criarAgua(centro: Vector3): void {
     const comprimento = this.rio.cachoeira.distancia + RIO_ABAIXO;
-    const largura = this.rio.largura + 10; // a água entra um pouco nas margens
+    const largura = this.rio.largura + 2 * SOBRA_MARGEM; // a água entra um pouco nas margens
     this.texturaAgua.repeat.set(largura / 12, comprimento / 12);
     const agua = new Mesh(
       new PlaneGeometry(largura, comprimento),

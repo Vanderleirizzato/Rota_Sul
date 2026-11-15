@@ -37,6 +37,7 @@ export class Hud {
   private readonly dicas: HTMLElement;
   private rpmMaximoDesenhado = 0;
   private cameraDesenhada = '';
+  private aPe = false;
   private readonly painel: HTMLElement;
 
   constructor() {
@@ -94,15 +95,30 @@ export class Hud {
     this.marcha.textContent = String(e.marcha);
     this.nivelNitro.style.transform = `scaleX(${e.nitro})`;
     this.nitro.classList.toggle('ligado', e.nitroLigado);
-    this.drift.classList.toggle('visivel', e.derrapando);
+    this.drift.classList.toggle('visivel', e.derrapando && !this.aPe);
     if (e.camera !== this.cameraDesenhada) this.desenharDicas(e.camera);
+  }
+
+  /** A pé: esconde velocímetro e nitro (são do carro) e troca as dicas de teclas. */
+  mostrarAPe(aPe: boolean): void {
+    if (aPe === this.aPe) return;
+    this.aPe = aPe;
+    this.painel.classList.toggle('a-pe', aPe);
+    if (aPe) this.drift.classList.remove('visivel');
+    this.desenharDicas(this.cameraDesenhada);
   }
 
   /** Só redesenha as dicas quando algo muda (mexer no HTML a cada quadro custa caro). */
   private desenharDicas(camera: string): void {
     this.cameraDesenhada = camera;
+    if (this.aPe) {
+      this.dicas.innerHTML =
+        `A pé &nbsp;·&nbsp; <kbd>W</kbd>/<kbd>S</kbd> andar &nbsp;<kbd>A</kbd>/<kbd>D</kbd> virar &nbsp;<kbd>Shift</kbd> correr &nbsp;` +
+        `<kbd>Espaço</kbd> pular &nbsp;<kbd>E</kbd> entrar no carro &nbsp;<kbd>R</kbd> voltar ao carro &nbsp;<kbd>Esc</kbd> pausar`;
+      return;
+    }
     this.dicas.innerHTML =
-      `Câmera: ${camera} &nbsp;·&nbsp; <kbd>C</kbd> câmera &nbsp;<kbd>R</kbd> reposicionar &nbsp;<kbd>T</kbd> correr da largada &nbsp;` +
+      `Câmera: ${camera} &nbsp;·&nbsp; <kbd>C</kbd> câmera &nbsp;<kbd>R</kbd> reposicionar &nbsp;<kbd>T</kbd> correr da largada &nbsp;<kbd>E</kbd> descer &nbsp;` +
       `<kbd>Esc</kbd> pausar &nbsp;<kbd>F2</kbd> tuning &nbsp;<kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> carro`;
   }
 

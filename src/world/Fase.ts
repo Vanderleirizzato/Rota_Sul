@@ -43,7 +43,6 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   // No passeio o mapa é livre: paredes invisíveis na borda seguram o carro.
   colocarLimites(fisica, terreno);
   // Onde tem água: o rio e/ou o mar (cada um com a altura da sua superfície).
-  const niveisAgua = [dados.rio?.nivel, dados.mar?.nivel].filter((n): n is number => n !== undefined);
   const rio = dados.rio ? new Rio(cena, fisica, tracado, dados.rio) : null;
   const mar = dados.mar ? new Mar(cena, tracado, dados.mar) : null;
   const plateia = new Plateia(cena, fisica, tracado, dados.plateia);
@@ -88,8 +87,11 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     areaLivre: (distancia, lateral, fora) => dentroDePatio(patios, distancia, lateral, fora),
     // Na água = o chão ali está abaixo da superfície E o carro desceu até ela.
     // (Em cima da ponte o chão está abaixo da água, mas o carro está lá no alto.)
-    naAgua: (p) =>
-      niveisAgua.some((nivel) => terreno.alturaEm(p.x, p.z) < nivel && p.y < nivel + tuning.reposicionamento.alturaNoMar),
+    naAgua: (p) => {
+      const abaixo = (nivel: number): boolean => terreno.alturaEm(p.x, p.z) < nivel && p.y < nivel + tuning.reposicionamento.alturaNoMar;
+      // O rio só conta dentro da faixa de água dele; o mar cobre tudo abaixo do nível.
+      return (rio !== null && rio.cobre(p.x, p.z) && abaixo(dados.rio?.nivel ?? 0)) || (dados.mar !== undefined && abaixo(dados.mar.nivel));
+    },
     alturaChao: (x, z) => terreno.alturaEm(x, z),
     atualizar(dt, camera, alturaEmPixels, posicaoCarro, alfa) {
       mar?.atualizar(dt);
