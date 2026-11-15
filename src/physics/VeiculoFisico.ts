@@ -47,6 +47,8 @@ export interface EstadoRoda {
 const DIANTEIRAS = [0, 1];
 const TRASEIRAS = [2, 3];
 const CIMA_LOCAL = new Vector3(0, 1, 0);
+/** "Para cima" do mundo (igual a CIMA_LOCAL, mas nunca é girado). */
+const CIMA_MUNDO = new Vector3(0, 1, 0);
 const ESQUERDA_LOCAL = new Vector3(1, 0, 0);
 const FRENTE_LOCAL = new Vector3(0, 0, 1);
 
@@ -71,6 +73,8 @@ export class VeiculoFisico {
   acelerando = false;
   /** Pedido de reposicionamento (o carro capotou ou caiu). Quem decide para onde é o Jogo. */
   precisaReposicionar = false;
+  /** Fora do asfalto? Quem sabe onde fica a pista é o Jogo, que liga isto. */
+  naGrama = false;
 
   // Posição e rotação no passo anterior e no atual, para a interpolação.
   readonly posicaoAnterior = new Vector3();
@@ -176,6 +180,8 @@ export class VeiculoFisico {
     this.controle.updateVehicle(dt);
     this.aplicarBarraEstabilizadora(dt);
     this.aplicarDownforce(dt);
+    this.aplicarArrastoGrama(dt);
+    this.autoEndireitar(dt);
     this.medirDerrapagem();
     this.assistirDrift(dt);
     this.atualizarNitro(dt);
@@ -322,9 +328,10 @@ export class VeiculoFisico {
       const motorNestaRoda = eTraseira && c.freioMao ? 0 : forcaMotor * parteMotor;
       this.controle.setWheelEngineForce(i, motorNestaRoda);
       this.controle.setWheelBrake(i, impulsoFreio);
+      const fatorGrama = this.naGrama ? tuning.grama.aderencia : 1;
       this.controle.setWheelFrictionSlip(
         i,
-        eTraseira ? tuning.aderencia.traseira * this.fatorAderenciaTraseira : tuning.aderencia.dianteira,
+        fatorGrama * (eTraseira ? tuning.aderencia.traseira * this.fatorAderenciaTraseira : tuning.aderencia.dianteira),
       );
     }
   }
@@ -358,6 +365,49 @@ export class VeiculoFisico {
       this.corpo.applyImpulseAtPoint(impulso, this.pontoDaRoda(esq), true);
       this.corpo.applyImpulseAtPoint(impulso.negate(), this.pontoDaRoda(dir), true);
     }
+  }
+
+  /**
+   * Inclinado além do ângulo livre, o carro ganha um giro de volta para a
+   * posição de pé, e o giro que o estava deitando é freado. Mexemos direto na
+   * velocidade de giro (e não numa força) para o ajuste não depender da massa
+   * do carro: o mesmo número serve para o carro 1 e o carro 2.
+   */
+  private autoEndireitar(dt: number): void {
+    const e = tuning.estabilidade;
+    if (e.forcaEndireitar <= 0) return;
+    const giro = this.rotacaoDoCorpo();
+    const cima = CIMA_LOCAL.clone().applyQuaternion(giro);
+    const angulo = Math.acos(Math.min(1, Math.max(-1, cima.y)));
+    const excesso = angulo - (e.anguloLivre * Math.PI) / 180;
+    if (excesso <= 0) return;
+
+    // Eixo em volta do qual "cima do carro" gira até "cima do mundo".
+    const eixo = new Vector3().crossVectors(cima, CIMA_MUNDO);
+    // De cabeça para baixo o eixo some (vetores opostos): gira pela frente.
+    if (eixo.lengthSq() < 1e-6) eixo.copy(FRENTE_LOCAL).applyQuaternion(giro);
+    eixo.normalize();
+
+    const w = this.corpo.angvel();
+    const giroAtual = new Vector3(w.x, w.y, w.z);
+    const giroNoEixo = giroAtual.dot(eixo);
+    const mudanca = (e.forcaEndireitar * excesso - e.amortecimento * giroNoEixo) * dt;
+    giroAtual.addScaledVector(eixo, mudanca);
+    this.corpo.setAngvel(giroAtual, true);
+  }
+
+  /**
+   * Na grama o carro perde velocidade (como num jogo de corrida arcade): sair
+   * da pista custa tempo, e quem sai rápido chega ao barranco já mais devagar.
+   * Só freia no plano (X/Z): na vertical quem manda é a gravidade.
+   */
+  private aplicarArrastoGrama(dt: number): void {
+    if (!this.naGrama) return;
+    const algumaRodaNoChao = [0, 1, 2, 3].some((i) => this.controle.wheelIsInContact(i));
+    if (!algumaRodaNoChao) return;
+    const v = this.corpo.linvel();
+    const fator = Math.min(1, tuning.grama.arrasto * dt) * this.corpo.mass();
+    this.corpo.applyImpulse({ x: -v.x * fator, y: 0, z: -v.z * fator }, true);
   }
 
   /** Empurra o carro contra o chão, mais forte quanto mais rápido. */
@@ -441,9 +491,11 @@ export class VeiculoFisico {
 
   private verificarCapotado(dt: number): void {
     const cima = CIMA_LOCAL.clone().applyQuaternion(this.rotacaoDoCorpo());
-    const deitado = cima.y < 0.3;
-    const parado = Math.abs(this.velocidade) < 2;
-    this.tempoCapotado = deitado && parado ? this.tempoCapotado + dt : 0;
+    // Tombado = inclinado demais, mesmo que ainda escorregando. Antes exigíamos
+    // "parado", e o carro deitado num barranco, deslizando, nunca voltava.
+    const r = tuning.reposicionamento;
+    const tombado = cima.y < Math.cos((r.inclinacaoTombado * Math.PI) / 180);
+    this.tempoCapotado = tombado ? this.tempoCapotado + dt : 0;
     const caiu = this.corpo.translation().y < tuning.reposicionamento.alturaQueda;
     if (this.tempoCapotado > tuning.reposicionamento.tempoCapotado || caiu) {
       this.precisaReposicionar = true;

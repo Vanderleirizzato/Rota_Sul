@@ -101,6 +101,26 @@ export class AudioCarro {
     if (subiu) this.soproTurbo(ctx, this.saida, this.ruido, agora);
   }
 
+  /**
+   * Bipe da contagem regressiva: grave no 3, 2, 1 e agudo no "VAI!".
+   * Uma onda senoidal pura com volume que cai rápido: o som de semáforo de corrida.
+   */
+  bip(agudo: boolean): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.saida) return;
+    const agora = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = agudo ? 1320 : 660;
+    const volume = ctx.createGain();
+    const duracao = agudo ? 0.6 : 0.25;
+    volume.gain.setValueAtTime(0.35, agora);
+    volume.gain.exponentialRampToValueAtTime(0.001, agora + duracao);
+    osc.connect(volume).connect(this.saida);
+    osc.start(agora);
+    osc.stop(agora + duracao);
+  }
+
   // ---------------------------------------------------------------------------
 
   private criarMotor(ctx: AudioContext, destino: AudioNode) {

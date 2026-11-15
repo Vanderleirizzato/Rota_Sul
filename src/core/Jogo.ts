@@ -7,18 +7,26 @@ import { aplicarMateriaisCarro } from '../graphics/MateriaisCarro';
 import { EfeitosCarro } from '../graphics/EfeitosCarro';
 import { CameraPerseguicao, NOMES_CAMERA } from '../graphics/CameraPerseguicao';
 import { Ceu } from '../graphics/Ceu';
-import { DIRECAO_SOL_TESTE, Iluminacao } from '../graphics/Iluminacao';
+import { Iluminacao, LUZ_PADRAO, type ConfigLuz } from '../graphics/Iluminacao';
 import { PosProcessamento } from '../graphics/PosProcessamento';
 import { criarRenderizador } from '../graphics/Renderizador';
 import { obterModelo } from '../world/CarregadorModelos';
 import { MODELOS, type IdCarro, type InfoModelo } from '../world/assets';
-import { criarPistaTeste, LARGADA_TESTE } from '../world/PistaTeste';
+import { criarPistaTeste } from '../world/PistaTeste';
+import type { Cenario } from '../world/Cenario';
+import { construirFase } from '../world/Fase';
+import { FASES, FASE_INICIAL, type IdFase } from '../world/levels';
 import { Hud } from '../ui/Hud';
 import { PainelDev } from '../ui/PainelDev';
+import { VerColisores } from '../graphics/VerColisores';
 import { TelaPausa } from '../ui/TelaPausa';
+import { HudCorrida } from '../ui/HudCorrida';
+import { TelaFimFase } from '../ui/TelaFimFase';
 import { QUALIDADES, QUALIDADE_PADRAO, type NivelQualidade } from '../config/quality';
 import { tuning } from '../config/tuning';
 import { AudioCarro } from './AudioCarro';
+import { Corrida } from './Corrida';
+import { lerRecorde, registrarTempo } from './Recordes';
 import { LoopFixo } from './LoopFixo';
 import { Teclado } from './Teclado';
 
@@ -29,7 +37,7 @@ interface Carro {
   visual: CarroVisual;
 }
 
-/** Altura acima do chão ao reposicionar (m): o carro "cai" de leve e assenta. */
+/** Altura acima do asfalto ao reposicionar (m): o carro "cai" de leve e assenta. */
 const ALTURA_REPOSICIONAR = 1;
 
 /**
@@ -52,7 +60,18 @@ export class Jogo {
   private readonly hud = new Hud();
   private readonly telaPausa = new TelaPausa();
   private readonly painel: PainelDev;
+  private readonly verColisores = new VerColisores(this.cena, this.fisica);
+  private readonly telaFim = new TelaFimFase();
   private carro!: Carro;
+  private cenario!: Cenario;
+  /** Só existe nas fases com chegada (a pista de teste não tem corrida). */
+  private corrida: Corrida | null = null;
+  private hudCorrida: HudCorrida | null = null;
+  /** Última amostra da pista onde o carro estava (acelera a busca do próximo quadro). */
+  private indiceNaPista: number | undefined;
+  private distanciaNaPista = 0;
+  private tempoForaDaPista = 0;
+  private nivelQualidade: NivelQualidade = QUALIDADE_PADRAO;
   private trocandoCarro = false;
   private pausado = false;
   private ultimoTempo = performance.now();
@@ -62,18 +81,18 @@ export class Jogo {
   private readonly posDesenho = new Vector3();
   private readonly rotDesenho = new Quaternion();
 
-  private constructor() {
+  private constructor(luz: ConfigLuz) {
     this.renderizador = criarRenderizador();
     this.camera = new CameraPerseguicao(window.innerWidth / window.innerHeight);
-    this.iluminacao = new Iluminacao(this.cena, DIRECAO_SOL_TESTE);
-    this.ceu = new Ceu(this.cena, this.renderizador, DIRECAO_SOL_TESTE);
+    this.iluminacao = new Iluminacao(this.cena, luz);
+    this.ceu = new Ceu(this.cena, this.renderizador, this.iluminacao.direcaoSol, luz.ceu);
     this.posProcessamento = new PosProcessamento(this.renderizador, this.cena, this.camera.camera);
     this.efeitos = new EfeitosCarro(this.cena);
     this.painel = new PainelDev(
       () => this.carro.fisico.aplicarMassa(),
       (nivel) => this.aplicarQualidade(nivel),
+      (mostrar) => this.verColisores.ligar(mostrar),
     );
-    criarPistaTeste(this.cena, this.fisica);
     this.aplicarQualidade(QUALIDADE_PADRAO);
 
     window.addEventListener('resize', () => this.aoRedimensionar());
@@ -87,9 +106,27 @@ export class Jogo {
     });
   }
 
+  /**
+   * Monta o jogo na fase pedida no endereço: ?fase=teste abre a pista de
+   * teste de física; sem nada, abre a fase inicial.
+   */
   static async criar(): Promise<Jogo> {
-    const jogo = new Jogo();
-    jogo.carro = await jogo.criarCarro('carro1', LARGADA_TESTE.posicao, LARGADA_TESTE.angulo);
+    const pedida = new URLSearchParams(window.location.search).get('fase');
+    const idFase: IdFase | 'teste' = pedida === 'teste' ? 'teste' : pedida && pedida in FASES ? (pedida as IdFase) : FASE_INICIAL;
+    // A luz precisa existir antes da cena; o resto da fase vem depois.
+    const jogo = new Jogo(idFase === 'teste' ? LUZ_PADRAO : FASES[idFase].iluminacao);
+    jogo.cenario = idFase === 'teste' ? criarPistaTeste(jogo.cena, jogo.fisica) : await construirFase(FASES[idFase], jogo.cena, jogo.fisica);
+    jogo.cenario.aplicarQualidade(QUALIDADES[jogo.nivelQualidade]);
+    const largada = jogo.cenario.largada;
+    jogo.carro = await jogo.criarCarro('carro1', largada.posicao, largada.angulo);
+    if (jogo.cenario.chegada !== null) {
+      jogo.corrida = new Corrida(jogo.cenario.chegada);
+      jogo.hudCorrida = new HudCorrida(jogo.cenario.nome, jogo.cenario.local, lerRecorde(jogo.cenario.id));
+    }
+    // Compila agora os "programas" de todos os materiais da fase. Sem isso, o
+    // navegador compila cada um na 1ª vez que o objeto aparece na tela, e o
+    // jogo dá um engasgo (o fps despenca por um instante) no meio da corrida.
+    await jogo.renderizador.compileAsync(jogo.cena, jogo.camera.camera);
     return jogo;
   }
 
@@ -107,6 +144,7 @@ export class Jogo {
 
   private atualizar(dt: number): void {
     this.painel.contarQuadro();
+    this.verColisores.atualizar();
     this.tratarTeclasDeUmToque();
     if (this.pausado) {
       // Pausado: não avança a física, só continua desenhando a cena parada.
@@ -116,7 +154,8 @@ export class Jogo {
     }
     this.tempoTotal += dt;
 
-    const comandos = this.lerComandos();
+    this.acompanharPista(dt);
+    const comandos = this.comandosDaCorrida(this.lerComandos());
     const carro = this.carro;
     const fisico = carro.fisico;
     const alfa = this.loop.avancar(dt, (passo) => {
@@ -150,6 +189,8 @@ export class Jogo {
     this.efeitos.ajustarEscala(this.camera.camera, this.renderizador.domElement.height);
     this.iluminacao.seguir(this.posDesenho);
     this.ceu.atualizar(this.camera.camera.position, this.tempoTotal);
+    this.cenario.atualizar(dt, this.camera.camera, this.renderizador.domElement.height, this.posDesenho);
+    this.atualizarCorrida(dt);
     this.hud.atualizar({
       velocidadeMs: fisico.velocidade,
       rpm: this.transmissao.rpm,
@@ -185,6 +226,65 @@ export class Jogo {
     if (t.apertou('reposicionar')) this.reposicionar();
     if (t.apertou('carro1')) void this.trocarCarro('carro1');
     if (t.apertou('carro2')) void this.trocarCarro('carro2');
+    if (t.apertou('confirmar') && this.corrida?.estado === 'chegou') this.reiniciarCorrida();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Corrida e pista
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Onde o carro está na pista? Serve para o cronômetro (cruzou a chegada?) e
+   * para devolver à estrada quem saiu dela ou caiu da ponte.
+   */
+  private acompanharPista(dt: number): void {
+    const tracado = this.cenario.tracado;
+    if (!tracado) return;
+    const posicao = this.carro.fisico.posicaoAtual;
+    const proj = tracado.projetar(posicao, this.indiceNaPista);
+    this.indiceNaPista = proj.indice;
+    this.distanciaNaPista = proj.distancia;
+
+    this.carro.fisico.naGrama = proj.afastamento > tracado.meiaLarguraTotal;
+    const r = tuning.reposicionamento;
+    const fora = proj.afastamento > tracado.meiaLarguraTotal + r.distanciaForaPista;
+    const caiu = posicao.y < tracado.alturaSuperficie(proj.indice, 0) - r.quedaAbaixoPista;
+    this.tempoForaDaPista = fora ? this.tempoForaDaPista + dt : 0;
+    if (caiu || this.tempoForaDaPista > r.tempoForaPista) this.reposicionar();
+  }
+
+  /** Na contagem o carro fica preso; depois da chegada, ele vai parando sozinho. */
+  private comandosDaCorrida(comandos: ComandosCarro): ComandosCarro {
+    const estado = this.corrida?.estado;
+    if (estado === 'contagem' || estado === 'chegou') {
+      return { acelerar: false, frear: false, direcao: 0, freioMao: true, nitro: false };
+    }
+    return comandos;
+  }
+
+  private atualizarCorrida(dt: number): void {
+    const corrida = this.corrida;
+    if (!corrida) return;
+    const evento = corrida.atualizar(dt, this.distanciaNaPista);
+    if (evento?.tipo === 'numero') this.audio.bip(false);
+    if (evento?.tipo === 'largou') this.audio.bip(true);
+    if (evento?.tipo === 'chegou') {
+      const recordeNovo = registrarTempo(this.cenario.id, evento.tempo);
+      const recorde = lerRecorde(this.cenario.id);
+      this.telaFim.mostrar(this.cenario.nome, evento.tempo, recorde, recordeNovo);
+      if (recorde !== null) this.hudCorrida?.mostrarRecorde(recorde);
+    }
+    this.hudCorrida?.atualizar(corrida.estado, corrida.tempo, corrida.restante);
+  }
+
+  /** Volta para a largada e começa a contagem de novo. */
+  private reiniciarCorrida(): void {
+    const { posicao, angulo } = this.cenario.largada;
+    this.carro.fisico.reposicionar(posicao.clone(), angulo);
+    this.camera.reiniciar();
+    this.indiceNaPista = undefined;
+    this.telaFim.esconder();
+    this.corrida?.reiniciar();
   }
 
   private definirPausa(pausado: boolean): void {
@@ -195,7 +295,10 @@ export class Jogo {
   }
 
   private aplicarQualidade(nivel: NivelQualidade): void {
+    this.nivelQualidade = nivel;
     const q = QUALIDADES[nivel];
+    // O cenário só existe depois de carregado (a 1ª chamada vem do construtor).
+    if (this.cenario !== undefined) this.cenario.aplicarQualidade(q);
     this.iluminacao.aplicarQualidade(q);
     this.posProcessamento.aplicarQualidade(q);
     // Além da neblina, a câmera não desenha nada: economiza a placa de vídeo.
@@ -204,15 +307,26 @@ export class Jogo {
   }
 
   /**
-   * Na pista de teste, "reposicionar" põe o carro de pé onde ele está. Se ele
-   * caiu do mundo, volta para a largada. (Nas fases, a Etapa 2 vai usar o
-   * ponto mais próximo do traçado.)
+   * Põe o carro de pé e de volta à estrada.
+   * Nas fases: no centro da pista, no ponto mais próximo de onde ele estava,
+   * apontando para a chegada. Na pista de teste (sem traçado): de pé onde
+   * está, ou na largada se caiu do mundo.
    */
   private reposicionar(): void {
     const f = this.carro.fisico;
-    const caiu = f.posicaoAtual.y < 0;
-    const posicao = caiu ? LARGADA_TESTE.posicao.clone() : f.posicaoAtual.clone().setY(ALTURA_REPOSICIONAR);
-    f.reposicionar(posicao, caiu ? LARGADA_TESTE.angulo : f.anguloHorizontal);
+    const tracado = this.cenario.tracado;
+    if (tracado) {
+      const i = tracado.projetar(f.posicaoAtual, this.indiceNaPista).indice;
+      const posicao = tracado.pontos[i].clone();
+      posicao.y += ALTURA_REPOSICIONAR;
+      f.reposicionar(posicao, tracado.anguloEm(i));
+    } else {
+      const largada = this.cenario.largada;
+      const caiu = f.posicaoAtual.y < 0;
+      const posicao = caiu ? largada.posicao.clone() : f.posicaoAtual.clone().setY(ALTURA_REPOSICIONAR);
+      f.reposicionar(posicao, caiu ? largada.angulo : f.anguloHorizontal);
+    }
+    this.tempoForaDaPista = 0;
     this.camera.reiniciar();
   }
 
@@ -221,7 +335,9 @@ export class Jogo {
     this.trocandoCarro = true;
     try {
       const antigo = this.carro;
-      const novo = await this.criarCarro(id, antigo.fisico.posicaoAtual.clone().setY(ALTURA_REPOSICIONAR), antigo.fisico.anguloHorizontal);
+      const posicao = antigo.fisico.posicaoAtual.clone();
+      posicao.y += ALTURA_REPOSICIONAR;
+      const novo = await this.criarCarro(id, posicao, antigo.fisico.anguloHorizontal);
       antigo.fisico.destruir();
       this.cena.remove(antigo.visual.objeto);
       this.carro = novo;

@@ -4,7 +4,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 // Céu procedural: em vez de uma foto de céu (pesada e fixa), um shader calcula
 // a cor de cada ponto pela física do espalhamento da luz do sol no ar. Mudando
 // a posição do sol, muda tudo: azul ao meio-dia, alaranjado no pôr do sol.
-// Isso vai ser útil nas fases (manhã em Foz, pôr do sol em Navegantes).
+// Cada fase escolhe o seu céu nos dados de iluminação (ConfigLuz).
 
 /** Aparência do céu. Valores do modelo de Preetham (o do shader). */
 export interface ConfigCeu {
@@ -19,12 +19,10 @@ export interface ConfigCeu {
 /** Quanto o céu ilumina os materiais (reflexos e luz difusa do ambiente). */
 const INTENSIDADE_AMBIENTE = 0.35;
 
-export const CEU_PADRAO: ConfigCeu = { turbidez: 4, rayleigh: 1.4, nuvens: 0.35 };
-
 export class Ceu {
   private readonly ceu = new Sky();
 
-  constructor(cena: Scene, renderizador: WebGLRenderer, direcaoSol: Vector3, config: ConfigCeu = CEU_PADRAO) {
+  constructor(cena: Scene, renderizador: WebGLRenderer, direcaoSol: Vector3, config: ConfigCeu) {
     const u = this.ceu.material.uniforms;
     u.turbidity.value = config.turbidez;
     u.rayleigh.value = config.rayleigh;

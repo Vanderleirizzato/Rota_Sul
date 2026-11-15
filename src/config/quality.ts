@@ -4,7 +4,8 @@
 // Três níveis prontos. O jogo começa no Médio. A meta do Baixo é 60 fps em
 // notebook com vídeo integrado; o Alto é para placa de vídeo dedicada.
 //
-// O que mais pesa, em ordem: resolução (pixel ratio), sombras, bloom e SMAA.
+// O que mais pesa, em ordem: resolução (pixel ratio), vegetação (árvores
+// detalhadas e a sombra delas), sombras, bloom e SMAA.
 // =============================================================================
 
 export type NivelQualidade = 'baixo' | 'medio' | 'alto';
@@ -30,6 +31,17 @@ export interface ConfigQualidade {
   smaa: boolean;
   /** Até onde enxergamos (m). Além disso, a neblina esconde e nada é desenhado. */
   distanciaDesenho: number;
+  /**
+   * Mostra as árvores muito detalhadas (árvore grande, árvore com cipós:
+   * 35 a 53 mil triângulos CADA). Desligado, ficam só as árvores comuns.
+   */
+  arvoresDetalhadas: boolean;
+  /**
+   * Plantas e pessoas projetam sombra? Tudo que tem sombra é desenhado duas
+   * vezes (uma para a tela, outra para o mapa de sombra). O carro, as pedras
+   * e os objetos da fase continuam com sombra sempre.
+   */
+  sombraCenario: boolean;
 }
 
 export const QUALIDADES: Record<NivelQualidade, ConfigQualidade> = {
@@ -42,7 +54,9 @@ export const QUALIDADES: Record<NivelQualidade, ConfigQualidade> = {
     areaSombra: 35,
     bloom: false,
     smaa: false,
-    distanciaDesenho: 400,
+    distanciaDesenho: 320,
+    arvoresDetalhadas: false,
+    sombraCenario: false,
   },
   medio: {
     nome: 'Médio',
@@ -54,6 +68,8 @@ export const QUALIDADES: Record<NivelQualidade, ConfigQualidade> = {
     bloom: true,
     smaa: true,
     distanciaDesenho: 700,
+    arvoresDetalhadas: true,
+    sombraCenario: true,
   },
   alto: {
     nome: 'Alto',
@@ -66,6 +82,8 @@ export const QUALIDADES: Record<NivelQualidade, ConfigQualidade> = {
     bloom: true,
     smaa: true,
     distanciaDesenho: 1200,
+    arvoresDetalhadas: true,
+    sombraCenario: true,
   },
 };
 

@@ -32,14 +32,22 @@ export class PainelDev {
    * @param aoMudarMassa chamado quando muda algo que exige recalcular a massa do
    *   carro (o resto é lido a cada passo e não precisa de aviso).
    * @param aoMudarQualidade chamado ao escolher outra qualidade gráfica.
+   * @param aoMostrarColisores liga/desliga o desenho dos colisores físicos.
    */
-  constructor(aoMudarMassa: () => void, aoMudarQualidade: (nivel: NivelQualidade) => void) {
+  constructor(
+    aoMudarMassa: () => void,
+    aoMudarQualidade: (nivel: NivelQualidade) => void,
+    aoMostrarColisores: (mostrar: boolean) => void,
+  ) {
     this.gui = new GUI({ title: 'Modo Dev: tuning (F2)' });
     // .listen() faz o painel reler o valor sozinho; .disable() impede edição.
     this.gui.add(this.medidor, 'fps').name('FPS').listen().disable();
     // Seletor de qualidade (provisório: na Etapa 5 ele vai para o menu).
     const opcoes = Object.fromEntries(Object.entries(QUALIDADES).map(([nivel, q]) => [q.nome, nivel]));
     this.gui.add({ qualidade: QUALIDADE_PADRAO }, 'qualidade', opcoes).name('Qualidade').onChange(aoMudarQualidade);
+    // Desenha em linhas o que a FÍSICA enxerga (caixas, cascos, cilindros).
+    // Bom para achar "obstáculo invisível": colisor que não bate com o desenho.
+    this.gui.add({ colisores: false }, 'colisores').name('Mostrar colisores').onChange(aoMostrarColisores);
     for (const [secao, valores] of Object.entries(tuning)) {
       const pasta = this.gui.addFolder(secao);
       pasta.close();

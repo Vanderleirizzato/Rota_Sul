@@ -9,6 +9,9 @@ async function principal(): Promise<void> {
     await iniciarRapier();
     const jogo = await Jogo.criar();
     aviso?.remove();
+    // Só no `npm run dev`: deixa o jogo acessível no console do navegador (F12)
+    // como `jogo`, para inspecionar valores enquanto se testa. Some no build final.
+    if (import.meta.env.DEV) Object.assign(window, { jogo });
     jogo.iniciar();
   } catch (erro) {
     console.error(erro);

@@ -1,27 +1,58 @@
 import { Color, DirectionalLight, Fog, HemisphereLight, Scene, Vector3 } from 'three';
 import type { ConfigQualidade } from '../config/quality';
+import type { ConfigCeu } from './Ceu';
 
 // Luz do sol (com sombra) + luz do céu. A direção do sol é a mesma usada pelo
 // céu procedural, para a sombra cair do lado certo do brilho do céu.
 
-/** Direção de onde vem o sol na pista de teste: manhã, alto e à esquerda. */
-export const DIRECAO_SOL_TESTE = new Vector3(-0.5, 0.8, -0.35).normalize();
-/** Cor da neblina: perto da cor do horizonte, para o chão "sumir" no céu. */
-const COR_NEBLINA = 0xbcd2e4;
+/**
+ * Iluminação de uma fase. Fica nos dados da fase (manhã em Foz, pôr do sol em
+ * Navegantes...). Cores em hexadecimal, como no CSS: 0xffffff = branco.
+ */
+export interface ConfigLuz {
+  /** De onde vem o sol [x, y, z]. Y pequeno = sol baixo, sombras compridas. */
+  direcaoSol: [number, number, number];
+  corSol: number;
+  /** Força do sol. Mais alto: luz mais dura e sombras mais marcadas. */
+  intensidadeSol: number;
+  /** Luz que vem do céu (de cima) e a refletida pelo chão (de baixo). */
+  corCeu: number;
+  corChao: number;
+  intensidadeCeu: number;
+  /** Cor da neblina: perto da cor do horizonte, para o chão "sumir" no céu. */
+  corNeblina: number;
+  /** Onde a neblina começa, como fração da distância de desenho (0 a 1). */
+  inicioNeblina: number;
+  ceu: ConfigCeu;
+}
+
+/** Luz da pista de teste: manhã clara, sol alto. */
+export const LUZ_PADRAO: ConfigLuz = {
+  direcaoSol: [-0.5, 0.8, -0.35],
+  corSol: 0xfff0dc,
+  intensidadeSol: 5.0,
+  corCeu: 0xcfe6ff,
+  corChao: 0x6b5a45,
+  intensidadeCeu: 1.0,
+  corNeblina: 0xbcd2e4,
+  inicioNeblina: 0.15,
+  ceu: { turbidez: 4, rayleigh: 1.4, nuvens: 0.35 },
+};
 
 export class Iluminacao {
+  readonly direcaoSol: Vector3;
   private readonly sol: DirectionalLight;
   private readonly neblina: Fog;
 
-  constructor(cena: Scene, private readonly direcaoSol: Vector3) {
-    this.neblina = new Fog(COR_NEBLINA, 100, 700);
+  constructor(cena: Scene, private readonly luz: ConfigLuz) {
+    this.direcaoSol = new Vector3(...luz.direcaoSol).normalize();
+    this.neblina = new Fog(luz.corNeblina, 100, 700);
     cena.fog = this.neblina;
-    cena.background = new Color(COR_NEBLINA); // só aparece se o céu falhar
+    cena.background = new Color(luz.corNeblina); // só aparece se o céu falhar
 
-    // Luz do "céu" (azulada de cima) e do "chão" (amarronzada de baixo).
-    cena.add(new HemisphereLight(0xcfe6ff, 0x6b5a45, 1.0));
+    cena.add(new HemisphereLight(luz.corCeu, luz.corChao, luz.intensidadeCeu));
 
-    this.sol = new DirectionalLight(0xfff0dc, 5.0);
+    this.sol = new DirectionalLight(luz.corSol, luz.intensidadeSol);
     this.sol.castShadow = true;
     this.sol.shadow.camera.near = 1;
     this.sol.shadow.camera.far = 250;
@@ -46,7 +77,7 @@ export class Iluminacao {
     }
     // A neblina termina onde paramos de desenhar: nada "aparece do nada".
     this.neblina.far = q.distanciaDesenho;
-    this.neblina.near = q.distanciaDesenho * 0.15;
+    this.neblina.near = q.distanciaDesenho * this.luz.inicioNeblina;
   }
 
   /**

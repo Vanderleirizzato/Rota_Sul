@@ -109,3 +109,83 @@
   border-radius: 3px;
   font: inherit;
 }
+
+/* ---- Corrida: cronômetro, contagem regressiva, nome da fase ---- */
+
+.hud-cronometro {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 16px;
+  border-radius: 8px;
+  background: rgba(10, 14, 22, 0.55);
+  font: 800 30px ui-monospace, 'Consolas', monospace;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 1px 4px #000;
+  pointer-events: none;
+}
+
+.hud-contagem {
+  position: fixed;
+  top: 32%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font: 900 140px ui-monospace, monospace;
+  font-style: italic;
+  color: #ffcc33;
+  text-shadow: 0 0 24px rgba(255, 140, 0, 0.9), 0 4px 10px #000;
+  pointer-events: none;
+}
+/* Cada número "pula" para fora da tela e some. */
+.hud-contagem.pulo { animation: hud-pulo 1s ease-out forwards; }
+@keyframes hud-pulo {
+  from { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  80% { opacity: 1; }
+  to { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+}
+
+.hud-titulo-fase {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font: 16px system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 0 1px 4px #000;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.hud-titulo-fase strong { font: 800 30px ui-monospace, monospace; letter-spacing: 3px; text-transform: uppercase; }
+.hud-titulo-fase small { color: #ffcc33; font-size: 14px; }
+.hud-titulo-fase.visivel { opacity: 1; }
+
+/* ---- Tela de Fim de Fase ---- */
+
+.tela-fim {
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: rgba(5, 8, 14, 0.55);
+  backdrop-filter: blur(3px);
+  z-index: 10;
+  color: #fff;
+  text-align: center;
+  font: 18px/1.6 system-ui, sans-serif;
+}
+.tela-fim.visivel { display: grid; animation: tela-fim-entrar 0.5s ease-out; }
+@keyframes tela-fim-entrar { from { opacity: 0; transform: scale(1.05); } }
+.tela-fim-rotulo { font: 900 60px ui-monospace, monospace; font-style: italic; letter-spacing: 6px; color: #ffcc33; text-shadow: 0 0 20px rgba(255, 140, 0, 0.8); }
+.tela-fim-fase { opacity: 0.85; }
+.tela-fim-tempo { margin: 8px 0; font: 800 64px ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.tela-fim-recorde { font-size: 18px; opacity: 0.85; }
+.tela-fim-recorde.novo { color: #33e1ff; font-weight: 800; letter-spacing: 3px; opacity: 1; animation: hud-piscar 0.4s infinite alternate; }
+.tela-fim-dica { margin-top: 28px; opacity: 0.85; }
+.tela-fim-dica kbd { padding: 0 6px; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 4px; font: inherit; }

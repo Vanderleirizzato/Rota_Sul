@@ -67,6 +67,25 @@ export const tuning = {
     barraEstabilizadora: 10000,
   },
 
+  /**
+   * Autoendireitar: um "giroscópio" de jogo arcade. No veículo por raycast, o
+   * atrito lateral dos pneus age lá embaixo, no chão; quando só um lado está
+   * apoiado (roda caindo do acostamento para a grama, por exemplo), esse
+   * atrito vira uma alavanca e deita o carro. Carro de verdade também capota
+   * assim, mas num jogo isso parece "capotou do nada".
+   */
+  estabilidade: {
+    /** Inclinação (graus) até onde a física fica livre. Acima disso, a correção
+     *  entra. Mais baixo: carro mais "grudado"; mais alto: capota mais fácil. */
+    anguloLivre: 25,
+    /** Força da correção (1/s²). Mais alto: desvira mais rápido e com mais
+     *  vontade. 0 desliga o autoendireitar (física pura). */
+    forcaEndireitar: 30,
+    /** Freio do giro de capotagem (1/s). Mais alto: o carro para de girar de
+     *  lado mais cedo, sem balançar. */
+    amortecimento: 6,
+  },
+
   motor: {
     /** Força de tração máxima (N), somando as rodas. Mais alto: arranca
      *  mais forte. Alto demais com tração traseira: patina e roda. */
@@ -120,6 +139,20 @@ export const tuning = {
     /** Rigidez lateral dos pneus. Mais alto: segura de lado com firmeza.
      *  Mais baixo: escorrega de lado mesmo sem derrapar de verdade. */
     rigidezLateral: 1.0,
+  },
+
+  grama: {
+    /**
+     * Freio da grama (por segundo): fração da velocidade perdida a cada
+     * segundo fora do asfalto. Mais alto: sair da pista castiga mais e o carro
+     * chega devagar no barranco. 0: a grama é igual ao asfalto.
+     */
+    arrasto: 0.36,
+    /**
+     * Aderência dos pneus na grama (multiplica a do asfalto). Mais baixo: o
+     * carro escorrega de lado em vez de "tropeçar" e tombar. 1: igual ao asfalto.
+     */
+    aderencia: 0.55,
   },
 
   drift: {
@@ -178,10 +211,29 @@ export const tuning = {
   },
 
   reposicionamento: {
-    /** Segundos de cabeça para baixo (e parado) antes de desvirar sozinho. */
-    tempoCapotado: 2.5,
+    /** Segundos tombado (de lado ou de cabeça para baixo) antes de voltar sozinho para a pista. */
+    tempoCapotado: 2,
+    /**
+     * A partir de quantos graus de inclinação o carro conta como "tombado".
+     * Mais baixo: volta para a pista mais cedo, até em barrancos fortes.
+     */
+    inclinacaoTombado: 45,
     /** Abaixo desta altura (m) consideramos que o carro caiu do mundo. */
     alturaQueda: -20,
+    /**
+     * Nas fases: a quantos metros além da beira do acostamento o carro é
+     * considerado "fora da pista". Mais alto: dá para passear mais pelo mato.
+     */
+    distanciaForaPista: 14,
+    /** Segundos fora da pista antes de voltar sozinho para o asfalto. */
+    tempoForaPista: 2,
+    /** Metros abaixo do asfalto (caiu da ponte, rolou barranco abaixo) para voltar na hora. */
+    quedaAbaixoPista: 6,
+  },
+
+  corrida: {
+    /** Segundos de contagem regressiva antes da largada (3, 2, 1...). */
+    contagemRegressiva: 3,
   },
 
   camera: {

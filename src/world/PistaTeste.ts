@@ -1,27 +1,28 @@
 import {
   BoxGeometry,
   BufferGeometry,
-  CanvasTexture,
   DoubleSide,
   Float32BufferAttribute,
   Mesh,
   MeshStandardMaterial,
   PlaneGeometry,
   Quaternion,
-  RepeatWrapping,
   Scene,
-  SRGBColorSpace,
   Vector3,
 } from 'three';
 import type { MundoFisico } from '../physics/MundoFisico';
+import { texturaAsfalto } from '../graphics/Texturas';
+import { LUZ_PADRAO } from '../graphics/Iluminacao';
+import type { Cenario } from './Cenario';
 
 // =============================================================================
 // PISTA DE TESTE (Etapa 1)
 // =============================================================================
 // Um plano grande de asfalto com um circuito pintado no chão, uma rampa e um
 // círculo para treinar drift. Serve para acertar a física do carro sem
-// cenário atrapalhando. Na Etapa 2, as fases de verdade usam o construtor de
-// pistas sobre CatmullRomCurve3; esta pista continua existindo para testes.
+// cenário atrapalhando. As fases de verdade usam o construtor de pistas
+// (Fase.ts); esta continua existindo para testes: abra o jogo com ?fase=teste
+// no endereço (ex.: http://localhost:5173/?fase=teste).
 // =============================================================================
 
 /** Trecho do circuito: reta (comprimento) ou curva (raio e ângulo; + = esquerda). */
@@ -50,11 +51,22 @@ const CIRCULO_DRIFT = { x: 115, z: 400, raio: 25 };
 /** Onde o carro nasce: no começo da reta longa, apontando para +Z. */
 export const LARGADA_TESTE = { posicao: new Vector3(0, 1, 5), angulo: 0 };
 
-export function criarPistaTeste(cena: Scene, fisica: MundoFisico): void {
+export function criarPistaTeste(cena: Scene, fisica: MundoFisico): Cenario {
   criarChao(cena, fisica);
   criarMuros(cena, fisica);
   criarRampa(cena, fisica);
   criarPinturas(cena);
+  return {
+    id: 'teste',
+    nome: 'Pista de teste',
+    local: 'Física do carro',
+    largada: LARGADA_TESTE,
+    tracado: null, // plano aberto: sem traçado
+    chegada: null, // sem corrida nem cronômetro
+    luz: LUZ_PADRAO,
+    atualizar() {},
+    aplicarQualidade() {}, // nada pesado aqui
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -250,25 +262,4 @@ function malhaDePintura(quads: Quad[], cor: number): Mesh {
   const malha = new Mesh(geo, mat);
   malha.receiveShadow = true;
   return malha;
-}
-
-/** Textura de asfalto gerada por código: cinza com granulado aleatório. */
-function texturaAsfalto(): CanvasTexture {
-  const tamanho = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = tamanho;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas 2D indisponível');
-  ctx.fillStyle = '#3a3c40';
-  ctx.fillRect(0, 0, tamanho, tamanho);
-  for (let i = 0; i < 9000; i++) {
-    const tom = 40 + Math.random() * 50;
-    ctx.fillStyle = `rgb(${tom},${tom},${tom + 3})`;
-    ctx.fillRect(Math.random() * tamanho, Math.random() * tamanho, 1 + Math.random() * 2, 1 + Math.random() * 2);
-  }
-  const textura = new CanvasTexture(canvas);
-  textura.wrapS = textura.wrapT = RepeatWrapping;
-  textura.colorSpace = SRGBColorSpace;
-  textura.anisotropy = 8;
-  return textura;
 }

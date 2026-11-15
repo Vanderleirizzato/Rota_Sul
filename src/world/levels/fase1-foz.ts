@@ -1,0 +1,127 @@
+import type { DadosFase } from './TiposFase';
+
+// =============================================================================
+// FASE 1: CATARATAS E FRONTEIRA (Foz do Iguaçu)
+// =============================================================================
+// Estrada de serra no meio da Mata Atlântica, de manhã. Começa no plano, sobe
+// até o alto do morro (~38 m), desce até a ponte sobre o rio (com a cachoeira
+// rio acima) e termina debaixo do grande arco de pedra.
+//
+// Só dados: quem monta o mundo é o Fase.ts. Para criar outra fase, copie este
+// arquivo, mude os números e registre a cópia em levels/index.ts.
+//
+// Dica para editar o traçado: cada ponto é [x, altura, z]. Pontos muito
+// próximos com mudança brusca de direção viram curvas fechadas demais; deixe
+// 80 a 120 m entre eles. Subidas acima de ~8% ficam difíceis para o carro.
+// =============================================================================
+
+export const FASE1_FOZ: DadosFase = {
+  id: 'fase1-foz',
+  nome: 'Cataratas e Fronteira',
+  local: 'Foz do Iguaçu · PR',
+
+  // Comprimento total ≈ 3,1 km. Os comentários marcam a distância (m) de cada ponto.
+  tracado: [
+    [0, 0, -90], //       0 · fundo da área de largada
+    [0, 0, 0], //        90 · largada
+    [0, 1, 120], //     210
+    [30, 4, 230], //    326
+    [110, 8, 300], //   434
+    [210, 13, 300], //  536 · primeira curva forte, à esquerda
+    [270, 18, 230], //  630
+    [290, 22, 130], //  732 · curva à direita
+    [360, 25, 60], //   832
+    [460, 27, 60], //   934
+    [530, 30, 130], // 1036
+    [540, 34, 240], // 1148
+    [480, 37, 330], // 1258
+    [400, 38, 380], // 1352 · alto do morro
+    [330, 36, 460], // 1460
+    [340, 32, 570], // 1572
+    [420, 27, 640], // 1682
+    [530, 22, 650], // 1794
+    [620, 17, 600], // 1896
+    [700, 12, 560], // 1986 · começo da reta da ponte
+    [790, 10, 560], // 2078 · ponte sobre o rio
+    [880, 10, 560], // 2168
+    [960, 11, 600], // 2258
+    [1010, 13, 690], // 2362
+    [990, 15, 800], // 2476
+    [920, 16, 880], // 2584 · curva mais fechada (raio ~50 m)
+    [930, 15, 990], // 2696
+    [1010, 13, 1060], // 2804
+    [1110, 11, 1070], // 2906 · reta final
+    [1200, 10, 1060], // 2996
+    [1300, 10, 1060], // 3096 · fim da área de frenagem
+  ],
+
+  pista: {
+    largura: 8, // duas faixas de 4 m
+    acostamento: 2,
+    inclinacaoMaximaGraus: 6,
+    raioInclinacaoTotal: 70,
+  },
+
+  largada: 90,
+  chegada: 2930,
+  bioma: 'mataAtlantica',
+
+  // Manhã: sol baixo vindo do leste, luz dourada e sombras compridas.
+  iluminacao: {
+    direcaoSol: [0.55, 0.38, 0.75],
+    corSol: 0xffdcb0,
+    intensidadeSol: 4.2,
+    corCeu: 0xd6ecff,
+    corChao: 0x4d5a32, // o verde da mata reflete um pouco de luz verde por baixo
+    intensidadeCeu: 1.1,
+    corNeblina: 0xcfdde0,
+    inicioNeblina: 0.25,
+    ceu: { turbidez: 6, rayleigh: 1.8, nuvens: 0.3 },
+  },
+
+  objetos: [
+    // Paredões de pedra do lado de dentro das curvas fechadas (estrada cortada no morro).
+    { modelo: 'paredao', distancia: 560, lado: 'esquerda', afastamento: 18, altura: -3 },
+    { modelo: 'paredao', distancia: 720, lado: 'direita', afastamento: 18, altura: -3, rotacao: 15 },
+    { modelo: 'paredao', distancia: 940, lado: 'direita', afastamento: 19, altura: -4, escala: 1.2 },
+    { modelo: 'paredao', distancia: 1460, lado: 'esquerda', afastamento: 18, altura: -3 },
+    { modelo: 'paredao', distancia: 2480, lado: 'direita', afastamento: 18, altura: -3, rotacao: -10 },
+    { modelo: 'paredao', distancia: 2585, lado: 'esquerda', afastamento: 18, altura: -2, escala: 0.9 },
+    // Pedras grandes do lado de fora das curvas.
+    { modelo: 'rochaMedia', distancia: 600, lado: 'direita', afastamento: 11, escala: 2.2 },
+    { modelo: 'rochaMedia', distancia: 1180, lado: 'esquerda', afastamento: 11, escala: 1.8, rotacao: 40 },
+    { modelo: 'rocha', distancia: 1380, lado: 'direita', afastamento: 10, escala: 2.5 },
+    { modelo: 'rochaMedia', distancia: 2560, lado: 'direita', afastamento: 12, escala: 2.4 },
+    // O grande arco de pedra na linha de chegada.
+    { modelo: 'arco', distancia: 2930, lado: 'centro', afastamento: 0, rotacao: 90 },
+  ],
+
+  // O rio passa por baixo da reta da ponte. A cachoeira fica 60 m rio acima,
+  // à esquerda: dá para vê-la de cima da ponte.
+  rio: {
+    distancia: 2078,
+    nivel: 1,
+    largura: 18,
+    cachoeira: { distancia: 60, lado: 'esquerda', altura: 24 },
+  },
+
+  // Mochileiros andando pelo acostamento (saem da frente quando o carro chega)
+  // e paradas de descanso com bicicleta.
+  andarilhos: {
+    quantidade: 8,
+    trecho: 120,
+    paradas: [
+      { distancia: 470, lado: 'direita' },
+      { distancia: 1352, lado: 'esquerda' }, // no alto do morro
+      { distancia: 2230, lado: 'direita' }, // logo depois da ponte, olhando o rio
+    ],
+  },
+
+  plateia: [
+    { distancia: 90, lado: 'esquerda', quantidade: 8, comprimento: 22 },
+    { distancia: 90, lado: 'direita', quantidade: 8, comprimento: 22 },
+    // Antes do arco: os pilares dele ocupam a beira da pista bem na linha de chegada.
+    { distancia: 2906, lado: 'esquerda', quantidade: 10, comprimento: 24 },
+    { distancia: 2906, lado: 'direita', quantidade: 10, comprimento: 24 },
+  ],
+};

@@ -10,6 +10,8 @@
 // Para medir os arquivos originais: npm run inspecionar-modelos
 //
 // Convenção do jogo: veículos e personagens olham para +Z.
+//
+// Formatos aceitos: .glb (o padrão) e .fbx (só a ponte veio assim).
 // =============================================================================
 
 /** Qual dimensão do modelo deve ficar com o tamanho `metros`. */
@@ -39,6 +41,17 @@ export interface InfoModelo {
   rodas?: RodasDoModelo;
   /** Algo a conferir quando o modelo entrar no jogo. */
   observacao?: string;
+  /** Pessoa que pode aparecer na plateia (largada e chegada). */
+  plateia?: boolean;
+  /** Pessoa que anda pelo acostamento (precisa ter animação "Walk"). */
+  andarilho?: boolean;
+  /**
+   * Arcos e pórticos: fração do comprimento, no meio, que fica livre para
+   * passar por baixo. O colisor vira dois pilares, um em cada ponta.
+   */
+  vaoLivre?: number;
+  /** Cor que substitui o material original (para modelos cuja textura não veio junto). */
+  corMaterial?: number;
 }
 
 const M = 'models/';
@@ -104,10 +117,14 @@ export const MODELOS = {
 
   // ---------------------------------------------------------- construções --
   // O arco precisa cobrir a pista; 16 m de vão dá uns 23 m de altura.
-  arco: { arquivo: `${M}Arch by CreativeTrio - UNjhI7hudt.glb`, medida: 'comprimento', metros: 16, rotacaoY: 0, solido: true, observacao: 'Ajustar o vão à largura real da pista (Etapa 2).' },
+  // O vão livre do arco é só 40% da largura (o resto são os pilares). Para a
+  // pista de 12 m passar com folga, ele precisa de 38 m de largura (56 m de altura!).
+  arco: { arquivo: `${M}Arch by CreativeTrio - UNjhI7hudt.glb`, medida: 'comprimento', metros: 38, rotacaoY: 0, solido: true, vaoLivre: 0.4 },
+  // A ponte de treliça vem comprida em X; giramos para ficar em Z, como a pista.
+  // A textura dela não veio junto com o .fbx (ficava preta): pintamos de aço.
+  ponte: { arquivo: `${M}Bridge.fbx`, medida: 'comprimento', metros: 46, rotacaoY: 90, solido: false, corMaterial: 0x8b9299, observacao: 'O piso dela fica a ~50% da altura; a pista passa por cima.' },
   posteRua: { arquivo: `${M}Street Light by Quaternius - nFwrlcLvM5.glb`, medida: 'altura', metros: 7, rotacaoY: 0, solido: true },
   posteLampiao: { arquivo: `${M}Street Objects - Lamp Post by Ev Amitay - awUS2qoxeSa.glb`, medida: 'altura', metros: 4.5, rotacaoY: 0, solido: true },
-  // A ponte (Bridge.fbx) não entra aqui: não é .glb. Ver PROMPTS-ETAPAS.md, Etapa 2.
 
   // ------------------------------------------------------------------ porto --
   // Contêiner de 20 pés: 6,06 m. O verde é comprido em X; giramos para ficar em Z como o outro.
@@ -118,10 +135,15 @@ export const MODELOS = {
 
   // ------------------------------------------------------ pessoas e bichos --
   // Modelos com animação (esqueleto): o carregador clona com SkeletonUtils.
-  homem: { arquivo: `${PI}Man by Quaternius - HMnuH5geEG.glb`, medida: 'altura', metros: 1.8, rotacaoY: 0, solido: false, observacao: '11 animações.' },
-  mulher: { arquivo: `${PI}Animated Woman by Quaternius - 9kF7eTDbhO.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, observacao: '10 animações. Braços abertos ao longo de Z: talvez precise de rotacaoY 90.' },
-  aventureiro: { arquivo: `${PI}Adventurer by Quaternius - 5EGWBMpuXq.glb`, medida: 'altura', metros: 1.8, rotacaoY: 0, solido: false, observacao: '24 animações.' },
-  aventureira: { arquivo: `${PI}Adventurer by Quaternius - ZwF0K7WBmu.glb`, medida: 'altura', metros: 1.75, rotacaoY: 0, solido: false, observacao: '24 animações.' },
+  homem: { arquivo: `${PI}Man by Quaternius - HMnuH5geEG.glb`, medida: 'altura', metros: 1.8, rotacaoY: 0, solido: false, plateia: true, observacao: '11 animações (Man_Clapping na plateia).' },
+  mulher: { arquivo: `${PI}Animated Woman by Quaternius - 9kF7eTDbhO.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, plateia: true, observacao: '10 animações (Jump e Idle na plateia).' },
+  aventureiro: { arquivo: `${PI}Adventurer by Quaternius - 5EGWBMpuXq.glb`, medida: 'altura', metros: 1.8, rotacaoY: 0, solido: false, plateia: true, andarilho: true, observacao: '24 animações. Tem mochila: anda pelo acostamento (Walk/Run) e torce na plateia (Wave).' },
+  aventureira: { arquivo: `${PI}Adventurer by Quaternius - ZwF0K7WBmu.glb`, medida: 'altura', metros: 1.75, rotacaoY: 0, solido: false, plateia: true, andarilho: true, observacao: '24 animações. Tem mochila: anda pelo acostamento (Walk/Run) e torce na plateia (Wave).' },
+  mulher2: { arquivo: `${PI}Animated Woman by Quaternius - nIItLV9nxS.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, plateia: true, observacao: '24 animações (Wave na plateia).' },
+  moletom: { arquivo: `${PI}Hoodie Character by Quaternius - gKLBoRsyKe.glb`, medida: 'altura', metros: 1.75, rotacaoY: 0, solido: false, plateia: true, observacao: '24 animações (Wave na plateia).' },
+  senhor: { arquivo: `${PI}Old Guy by Polygonal Mind - imEy3Tqg80.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, plateia: false, observacao: 'Sem animações e em pose de "T" (braços abertos): fora da plateia, pareceria defeito.' },
+  // Peça única (as rodas não giram) e sem ciclista: fica parada nas paradas de descanso.
+  bicicleta: { arquivo: `${PI}Bicycle by Poly by Google - b6USSQA731J.glb`, medida: 'comprimento', metros: 1.75, rotacaoY: 0, solido: true },
   louvaDeus: { arquivo: `${PI}Praying Mantis by Lorenzo Cinalli - bm9Q0hKjcVC.glb`, medida: 'comprimento', metros: 4, rotacaoY: 0, solido: true, observacao: 'Inseto gigante do easter egg (Etapa 5).' },
   escorpiao: { arquivo: `${PI}Scorpion by jeremy - cJfrRPiSgA4.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true, observacao: 'Comprido em X: deve precisar de rotacaoY ±90 (Etapa 5).' },
   aranha: { arquivo: `${PI}Spider by Quaternius - yRYJiAJyiM.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true, observacao: '5 animações.' },

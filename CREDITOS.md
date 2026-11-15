@@ -10,7 +10,7 @@ Os nomes no formato `"Nome by Autor - código.glb"` parecem vir do site [Poly Pi
 |---|---|---|---|
 | Carro 1 | `Carro1.glb` | a preencher | a preencher |
 | Carro 2 | `Carro2.glb` | a preencher | a preencher |
-| Ponte | `Bridge.fbx` | a preencher | a preencher |
+| Ponte de treliça | `Bridge.fbx` (textura não veio junto; pintada de aço no código) | a preencher | a preencher |
 | Arco | `Arch by CreativeTrio` | CreativeTrio | a preencher |
 | Barreira simples | `Barrier Single by Quaternius` | Quaternius | CC0 (domínio público) |
 | Árvore grande | `Big Tree by 3Donimus` | 3Donimus | a preencher |
@@ -39,6 +39,10 @@ Os nomes no formato `"Nome by Autor - código.glb"` parecem vir do site [Poly Pi
 | Aventureira | `pessoas e Insetos/Adventurer by Quaternius - ZwF0K7WBmu` | Quaternius | CC0 (domínio público) |
 | Mulher animada | `pessoas e Insetos/Animated Woman by Quaternius` | Quaternius | CC0 (domínio público) |
 | Homem | `pessoas e Insetos/Man by Quaternius` | Quaternius | CC0 (domínio público) |
+| Mulher de vestido | `pessoas e Insetos/Animated Woman by Quaternius - nIItLV9nxS` | Quaternius | CC0 (domínio público) |
+| Rapaz de moletom | `pessoas e Insetos/Hoodie Character by Quaternius` | Quaternius | CC0 (domínio público) |
+| Senhor | `pessoas e Insetos/Old Guy by Polygonal Mind` | Polygonal Mind | a preencher |
+| Bicicleta | `pessoas e Insetos/Bicycle by Poly by Google` | Poly by Google | CC-BY 3.0 |
 | Louva-a-deus | `pessoas e Insetos/Praying Mantis by Lorenzo Cinalli` | Lorenzo Cinalli | a preencher |
 | Escorpião | `pessoas e Insetos/Scorpion by jeremy` | jeremy | a preencher |
 | Aranha | `pessoas e Insetos/Spider by Quaternius` | Quaternius | CC0 (domínio público) |
