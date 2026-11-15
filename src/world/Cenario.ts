@@ -32,6 +32,10 @@ export interface Cenario {
   /** Identificador usado para guardar o recorde. */
   id: string;
   largada: { posicao: Vector3; angulo: number };
+  /** Onde os carros do jogador começam estacionados, na ordem carro1, carro2, carro3 (posição um pouco acima do chão). */
+  vagas: { posicao: Vector3; angulo: number }[];
+  /** Onde o personagem aparece no começo da fase (os pés). */
+  inicioAPe: { posicao: Vector3; angulo: number };
   /** Linha central da estrada. A pista de teste não tem (é um plano aberto). */
   tracado: Tracado | null;
   /** Distância (m) da linha de chegada; null = sem corrida (pista de teste). */

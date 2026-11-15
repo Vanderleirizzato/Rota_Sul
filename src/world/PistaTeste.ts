@@ -61,6 +61,9 @@ export function criarPistaTeste(cena: Scene, fisica: MundoFisico): Cenario {
     nome: 'Pista de teste',
     local: 'Física do carro',
     largada: LARGADA_TESTE,
+    // Os três carros lado a lado na largada (o +X fica à esquerda de quem olha para +Z).
+    vagas: [3.4, 0, -3.4].map((x) => ({ posicao: LARGADA_TESTE.posicao.clone().setX(x), angulo: 0 })),
+    inicioAPe: { posicao: new Vector3(0, 0, -2), angulo: 0 },
     tracado: null, // plano aberto: sem traçado
     chegada: null, // sem corrida nem cronômetro
     luz: LUZ_PADRAO,

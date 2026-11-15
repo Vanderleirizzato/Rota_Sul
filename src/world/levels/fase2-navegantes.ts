@@ -89,6 +89,9 @@ export const FASE2_NAVEGANTES: DadosFase = {
   },
 
   largada: 90,
+  // Os 3 carros do jogador, lado a lado no fundo da área de largada (o
+  // trânsito só começa aos 25 m). O jogador começa a pé, logo atrás deles.
+  estacionamento: { distancia: 12, espacamento: 3.4 },
   chegada: 4480,
   bioma: 'litoral',
 

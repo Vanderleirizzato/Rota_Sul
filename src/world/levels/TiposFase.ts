@@ -134,6 +134,21 @@ export interface DadosRio {
   cachoeira: { distancia: number; lado: Lado; altura: number };
 }
 
+/**
+ * Onde os três carros do jogador ficam estacionados quando a fase começa (lado
+ * a lado, de frente para a largada). O jogador começa a pé, logo atrás, e
+ * escolhe em qual entrar.
+ */
+export interface DadosEstacionamento {
+  /**
+   * Distância (m) desde o início da pista. Deixe antes de `trafego.inicio`:
+   * senão o trânsito passa por cima dos carros parados.
+   */
+  distancia: number;
+  /** Espaço (m) entre o centro de um carro e o do vizinho. Menos de 3: as portas se encostam. */
+  espacamento: number;
+}
+
 /** Grupo de pessoas assistindo, atrás de uma fila de barreiras. */
 export interface DadosPlateia {
   distancia: number;
@@ -168,6 +183,8 @@ export interface DadosFase {
   /** Distâncias (m) da linha de largada e da linha de chegada. */
   largada: number;
   chegada: number;
+  /** Onde os carros do jogador começam estacionados. */
+  estacionamento: DadosEstacionamento;
   bioma: IdBioma;
   iluminacao: ConfigLuz;
   objetos: ObjetoFase[];

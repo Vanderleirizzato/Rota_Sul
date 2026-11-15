@@ -87,6 +87,7 @@ async function carregarENormalizar(info: InfoModelo): Promise<ModeloCarregado> {
       obj.castShadow = true;
       obj.receiveShadow = true;
       if (substituto) obj.material = substituto;
+      else if (info.fosco) deixarFosco(obj);
     }
   });
   embrulho.updateMatrixWorld(true);
@@ -98,4 +99,24 @@ function medirCaixa(embrulho: Group, raiz: Object3D): Box3 {
   // `precise = true` mede os vértices de verdade, não as caixas já rotacionadas
   // de cada peça, que exageram o tamanho de modelos girados.
   return new Box3().setFromObject(raiz, true);
+}
+
+/** Rugosidade mínima de um material "fosco": pele e pano espalham a luz, não espelham. */
+const RUGOSIDADE_FOSCO = 0.85;
+
+/**
+ * Tira o "verniz" de modelos convertidos de outro formato. Os personagens do
+ * Quaternius vieram de FBX com metal 0,4 em tudo (pele, roupa, cabelo): com o
+ * céu refletindo, pareciam envernizados. Pessoa não é metal: zeramos o metal
+ * e aumentamos a rugosidade. Os materiais são compartilhados entre as cópias,
+ * então isso roda uma vez por arquivo.
+ */
+function deixarFosco(malha: Mesh): void {
+  const materiais = Array.isArray(malha.material) ? malha.material : [malha.material];
+  for (const m of materiais) {
+    if (m instanceof MeshStandardMaterial) {
+      m.metalness = 0;
+      m.roughness = Math.max(m.roughness, RUGOSIDADE_FOSCO);
+    }
+  }
 }

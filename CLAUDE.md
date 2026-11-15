@@ -27,6 +27,7 @@ O jogo é um presente para o Enzo, estudante do 2º ano de ADS. Além de diverti
 
 ## Estrutura do mundo
 - **Mapa livre por fase, corridas lineares.** Cada fase começa em **modo passeio**: o jogador anda livre pelo mapa, sem cronômetro. A corrida (uma pista sobre `CatmullRomCurve3`, com largada e chegada) começa num **marcador de missão** na largada, e só durante ela valem o cronômetro e a volta automática para a pista.
+- **Começa a pé.** O jogador aparece a pé atrás dos três carros dele, estacionados lado a lado (`estacionamento` nos dados da fase, antes de onde o trânsito começa), e entra no que quiser com `E`. Todos os carros rodam a física o tempo todo; os estacionados ficam de freio de mão puxado.
 - Áreas escondidas fora da pista são bem-vindas para os segredos.
 - O jogador não pode cair para fora do mundo: paredes invisíveis na borda do terreno, e reposicionamento ao cair na água ou atravessar o chão.
 - **Progressão (Etapa 8):** o jogo começa sempre em Foz; terminar a corrida abaixo de um tempo-meta libera a próxima fase da lista (`src/world/levels/index.ts`). O progresso é salvo pelo id de cada fase, para dar para inserir cidades no meio da viagem sem quebrar saves.

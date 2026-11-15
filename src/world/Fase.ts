@@ -3,7 +3,7 @@ import type { MundoFisico } from '../physics/MundoFisico';
 import { BIOMAS } from './biomas';
 import type { Cenario, EstadoCarro } from './Cenario';
 import { construirPista } from './ConstrutorPista';
-import type { DadosFase } from './levels/TiposFase';
+import type { DadosEstacionamento, DadosFase } from './levels/TiposFase';
 import { barreirasNasPontas, colocarObjetos } from './ObjetosFase';
 import { Plateia } from './Plateia';
 import { Andarilhos } from './Andarilhos';
@@ -29,6 +29,8 @@ import { tuning } from '../config/tuning';
 const RECUO_LARGADA = 6;
 /** Altura (m) acima do asfalto em que o carro aparece: ele "cai" de leve e assenta. */
 const ALTURA_NASCER = 1;
+/** O personagem começa este tanto (m) atrás dos carros estacionados, de frente para eles. */
+const ATRAS_DOS_CARROS = 7;
 
 /**
  * Monta uma fase a partir dos dados: traçado → pista → terreno → rio/mar →
@@ -80,6 +82,11 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     nome: dados.nome,
     local: dados.local,
     largada: { posicao: tracado.pontos[i].clone().add(new Vector3(0, ALTURA_NASCER, 0)), angulo: tracado.anguloEm(i) },
+    vagas: vagasDoEstacionamento(tracado, dados.estacionamento),
+    inicioAPe: {
+      posicao: tracado.pontoAoLado(dados.estacionamento.distancia - ATRAS_DOS_CARROS, 'centro', 0),
+      angulo: tracado.anguloEm(tracado.indiceEm(dados.estacionamento.distancia)),
+    },
     tracado,
     chegada: dados.chegada,
     luz: dados.iluminacao,
@@ -134,4 +141,16 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       andarilhos?.aplicarQualidade(q);
     },
   };
+}
+
+/**
+ * As três vagas lado a lado, de frente para a largada: carro1 à esquerda,
+ * carro2 no meio e carro3 à direita.
+ */
+function vagasDoEstacionamento(tracado: Tracado, e: DadosEstacionamento): Cenario['vagas'] {
+  const angulo = tracado.anguloEm(tracado.indiceEm(e.distancia));
+  return [1, 0, -1].map((lado) => ({
+    posicao: tracado.pontoAoLado(e.distancia, 'esquerda', lado * e.espacamento).add(new Vector3(0, ALTURA_NASCER, 0)),
+    angulo,
+  }));
 }

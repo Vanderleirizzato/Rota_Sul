@@ -54,6 +54,11 @@ export interface InfoModelo {
    * passar por baixo. O colisor vira dois pilares, um em cada ponta.
    */
   vaoLivre?: number;
+  /**
+   * Tira o brilho de metal do material (o modelo veio "envernizado" da
+   * conversão de formato). Usado nas pessoas: pele e roupa não refletem o céu.
+   */
+  fosco?: boolean;
   /** Cor que substitui o material original (para modelos cuja textura não veio junto). */
   corMaterial?: number;
   /**
@@ -201,13 +206,13 @@ export const MODELOS = {
 
   // ------------------------------------------------------ pessoas e bichos --
   // Modelos com animação (esqueleto): o carregador clona com SkeletonUtils.
-  homem: { arquivo: `${PI}Man by Quaternius - HMnuH5geEG.glb`, medida: 'altura', metros: 1.8, rotacaoY: 0, solido: false, plateia: true, observacao: '11 animações (Man_Clapping na plateia).' },
-  mulher: { arquivo: `${PI}Animated Woman by Quaternius - 9kF7eTDbhO.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, plateia: true, observacao: '10 animações (Jump e Idle na plateia).' },
-  aventureiro: { arquivo: `${PI}Adventurer by Quaternius - 5EGWBMpuXq.glb`, medida: 'altura', metros: 1.8, rotacaoY: 0, solido: false, plateia: true, andarilho: true, observacao: '24 animações. Tem mochila: anda pelo acostamento (Walk/Run) e torce na plateia (Wave).' },
-  aventureira: { arquivo: `${PI}Adventurer by Quaternius - ZwF0K7WBmu.glb`, medida: 'altura', metros: 1.75, rotacaoY: 0, solido: false, plateia: true, andarilho: true, observacao: '24 animações. Tem mochila: anda pelo acostamento (Walk/Run) e torce na plateia (Wave).' },
-  mulher2: { arquivo: `${PI}Animated Woman by Quaternius - nIItLV9nxS.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, plateia: true, observacao: '24 animações (Wave na plateia).' },
-  moletom: { arquivo: `${PI}Hoodie Character by Quaternius - gKLBoRsyKe.glb`, medida: 'altura', metros: 1.75, rotacaoY: 0, solido: false, plateia: true, observacao: '24 animações (Wave na plateia).' },
-  senhor: { arquivo: `${PI}Old Guy by Polygonal Mind - imEy3Tqg80.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, plateia: false, observacao: 'Sem animações e em pose de "T" (braços abertos): fora da plateia, pareceria defeito.' },
+  homem: { arquivo: `${PI}Man by Quaternius - HMnuH5geEG.glb`, medida: 'altura', metros: 1.8, fosco: true, rotacaoY: 0, solido: false, plateia: true, observacao: '11 animações (Man_Clapping na plateia).' },
+  mulher: { arquivo: `${PI}Animated Woman by Quaternius - 9kF7eTDbhO.glb`, medida: 'altura', metros: 1.7, fosco: true, rotacaoY: 0, solido: false, plateia: true, observacao: '10 animações (Jump e Idle na plateia).' },
+  aventureiro: { arquivo: `${PI}Adventurer by Quaternius - 5EGWBMpuXq.glb`, medida: 'altura', metros: 1.8, fosco: true, rotacaoY: 0, solido: false, plateia: true, andarilho: true, observacao: '24 animações. Tem mochila: anda pelo acostamento (Walk/Run) e torce na plateia (Wave).' },
+  aventureira: { arquivo: `${PI}Adventurer by Quaternius - ZwF0K7WBmu.glb`, medida: 'altura', metros: 1.75, fosco: true, rotacaoY: 0, solido: false, plateia: true, andarilho: true, observacao: '24 animações. Tem mochila: anda pelo acostamento (Walk/Run) e torce na plateia (Wave).' },
+  mulher2: { arquivo: `${PI}Animated Woman by Quaternius - nIItLV9nxS.glb`, medida: 'altura', metros: 1.7, fosco: true, rotacaoY: 0, solido: false, plateia: true, observacao: '24 animações (Wave na plateia).' },
+  moletom: { arquivo: `${PI}Hoodie Character by Quaternius - gKLBoRsyKe.glb`, medida: 'altura', metros: 1.75, fosco: true, rotacaoY: 0, solido: false, plateia: true, observacao: '24 animações (Wave na plateia).' },
+  senhor: { arquivo: `${PI}Old Guy by Polygonal Mind - imEy3Tqg80.glb`, medida: 'altura', metros: 1.7, fosco: true, rotacaoY: 0, solido: false, plateia: false, observacao: 'Sem animações e em pose de "T" (braços abertos): fora da plateia, pareceria defeito.' },
   // Peça única (as rodas não giram) e sem ciclista: fica parada nas paradas de descanso.
   bicicleta: { arquivo: `${PI}Bicycle by Poly by Google - b6USSQA731J.glb`, medida: 'comprimento', metros: 1.75, rotacaoY: 0, solido: true },
   // Capivaras da orla de Navegantes, em grupos à beira da estrada. Sem animação:
@@ -215,9 +220,11 @@ export const MODELOS = {
   capivara: { arquivo: `${PI}Capybara by Poly by Google - 66d-mKAgF17.glb`, medida: 'comprimento', metros: 1.25, rotacaoY: 0, solido: true },
   louvaDeus: { arquivo: `${PI}Praying Mantis by Lorenzo Cinalli - bm9Q0hKjcVC.glb`, medida: 'comprimento', metros: 4, rotacaoY: 0, solido: true },
   escorpiao: { arquivo: `${PI}Scorpion by jeremy - cJfrRPiSgA4.glb`, medida: 'comprimento', metros: 5, rotacaoY: -90, solido: true },
-  aranha: { arquivo: `${PI}Spider by Quaternius - yRYJiAJyiM.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true },
+  aranha: { arquivo: `${PI}Spider by Quaternius - yRYJiAJyiM.glb`, medida: 'comprimento', metros: 5, fosco: true, rotacaoY: 0, solido: true },
   estatuaCervo: { arquivo: `${PI}Stag Statue by Quaternius - cKloIsNcT8.glb`, medida: 'altura', metros: 3, rotacaoY: 0, solido: true },
 } as const satisfies Record<string, InfoModelo>;
 
 export type IdModelo = keyof typeof MODELOS;
 export type IdCarro = 'carro1' | 'carro2' | 'carro3';
+/** Os carros do jogador, na ordem da garagem e das vagas do estacionamento. */
+export const IDS_CARROS: readonly IdCarro[] = ['carro1', 'carro2', 'carro3'];

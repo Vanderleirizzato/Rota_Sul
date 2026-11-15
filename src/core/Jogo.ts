@@ -11,7 +11,7 @@ import { Iluminacao, LUZ_PADRAO, type ConfigLuz } from '../graphics/Iluminacao';
 import { PosProcessamento } from '../graphics/PosProcessamento';
 import { criarRenderizador } from '../graphics/Renderizador';
 import { obterModelo } from '../world/CarregadorModelos';
-import { MODELOS, type IdCarro, type InfoModelo } from '../world/assets';
+import { IDS_CARROS, MODELOS, type IdCarro, type InfoModelo } from '../world/assets';
 import { criarPistaTeste } from '../world/PistaTeste';
 import type { Cenario, EstadoCarro } from '../world/Cenario';
 import { construirFase } from '../world/Fase';
@@ -87,6 +87,12 @@ export class Jogo {
   private readonly verColisores = new VerColisores(this.cena, this.fisica);
   private readonly telaFim = new TelaFimFase();
   private readonly mensagemEasterEgg = new MensagemEasterEgg();
+  /** Os três carros do jogador, na ordem carro1, carro2, carro3. */
+  private carros: Carro[] = [];
+  /**
+   * O carro que o jogador está dirigindo (ou o último em que esteve, quando
+   * está a pé): é dele o velocímetro, o som, e para o lado dele que o R leva.
+   */
   private carro!: Carro;
   /** Quem desce do carro com a tecla E (Etapa 9). */
   private personagem!: Personagem;
@@ -112,7 +118,6 @@ export class Jogo {
   private distanciaNaPista = 0;
   private tempoForaDaPista = 0;
   private nivelQualidade: NivelQualidade = lerEscolhas().qualidade;
-  private trocandoCarro = false;
   private pausado = false;
   private ultimoTempo = performance.now();
   /** A batida mais forte do carro neste quadro (variação de velocidade em m/s). */
@@ -126,6 +131,9 @@ export class Jogo {
   // Objetos reaproveitados a cada quadro (evita criar lixo para o coletor).
   private readonly posDesenho = new Vector3();
   private readonly rotDesenho = new Quaternion();
+  /** Para desenhar os carros estacionados (os outros, que não são o do jogador). */
+  private readonly posOutro = new Vector3();
+  private readonly rotOutro = new Quaternion();
   /** Giro do personagem como quatérnio (o cenário e a câmera pedem nesse formato). */
   private readonly rotPersonagem = new Quaternion();
 
@@ -184,10 +192,14 @@ export class Jogo {
     jogo.cenario = idFase === 'teste' ? criarPistaTeste(jogo.cena, jogo.fisica) : await construirFase(FASES[idFase], jogo.cena, jogo.fisica);
     jogo.cenario.aplicarQualidade(QUALIDADES[jogo.nivelQualidade]);
     const largada = jogo.cenario.largada;
-    // O carro escolhido na garagem do menu.
-    jogo.carro = await jogo.criarCarro(lerEscolhas().carro, largada.posicao, largada.angulo);
-    // Começa dentro do carro (invisível e fora da física até descer).
+    // Os três carros estacionados lado a lado; o jogador começa a pé, logo
+    // atrás, e escolhe em qual entrar (tecla E). O da garagem do menu é o
+    // "seu carro" até lá (o R a pé leva para o lado dele).
+    const vagas = jogo.cenario.vagas;
+    jogo.carros = await Promise.all(IDS_CARROS.map((id, k) => jogo.criarCarro(id, vagas[k].posicao, vagas[k].angulo)));
+    jogo.carro = jogo.carros.find((c) => c.id === lerEscolhas().carro) ?? jogo.carros[0];
     jogo.personagem = await Personagem.criar(jogo.cena, jogo.fisica.mundo);
+    jogo.personagem.aparecer(jogo.cenario.inicioAPe.posicao, jogo.cenario.inicioAPe.angulo);
     if (jogo.cenario.chegada !== null) {
       // O jogo começa passeando; a corrida começa no marcador, na largada.
       jogo.corrida = new Corrida(jogo.cenario.chegada);
@@ -243,8 +255,13 @@ export class Jogo {
     const fisico = carro.fisico;
     this.batidaNoQuadro = 0;
     const alfa = this.loop.avancar(dt, (passo) => {
-      fisico.guardarEstadoAnterior();
-      fisico.atualizar(passo, comandos);
+      // Todos os carros rodam a física: os estacionados também, com o freio
+      // de mão puxado. Sem isso a suspensão deles não seguraria o peso, e um
+      // esbarrão não os empurraria de um jeito realista.
+      for (const c of this.carros) {
+        c.fisico.guardarEstadoAnterior();
+        c.fisico.atualizar(passo, c === carro ? comandos : CARRO_ESTACIONADO);
+      }
       if (comandosAPe) {
         personagem.guardarEstadoAnterior();
         // O pulo vale para UM passo só (senão, num quadro com dois passos, pularia duas vezes).
@@ -259,7 +276,7 @@ export class Jogo {
       this.cenario.passoFisica(passo, this.estadoCarro);
       const antes = fisico.corpo.linvel();
       this.fisica.passo();
-      fisico.guardarEstado();
+      for (const c of this.carros) c.fisico.guardarEstado();
       if (aPe) personagem.guardarEstado();
       // Batida = a velocidade muda de repente num só passo. Motor e freio
       // mudam a velocidade aos pouquinhos; só uma pancada muda vários m/s de
@@ -274,15 +291,23 @@ export class Jogo {
 
     // Capotou: na corrida, volta para a pista; no passeio, só desvira ali
     // mesmo (o jogador pode estar longe da estrada de propósito).
-    if (fisico.precisaReposicionar) {
-      if (this.passeando) this.desvirar();
-      else this.reposicionar();
+    // Um carro estacionado que levou uma pancada e virou também é desvirado.
+    for (const c of this.carros) {
+      if (!c.fisico.precisaReposicionar) continue;
+      if (c === carro && !this.passeando) this.reposicionar();
+      else this.desvirar(c);
     }
 
-    // Interpolação: desenha o carro entre o passo anterior e o atual.
-    this.posDesenho.lerpVectors(fisico.posicaoAnterior, fisico.posicaoAtual, alfa);
-    this.rotDesenho.slerpQuaternions(fisico.rotacaoAnterior, fisico.rotacaoAtual, alfa);
-    carro.visual.atualizar(this.posDesenho, this.rotDesenho, [0, 1, 2, 3].map((i) => fisico.estadoRoda(i)));
+    // Interpolação: desenha cada carro entre o passo anterior e o atual. O
+    // do jogador fica em posDesenho/rotDesenho (a câmera e os efeitos usam).
+    for (const c of this.carros) {
+      const pos = c === carro ? this.posDesenho : this.posOutro;
+      const rot = c === carro ? this.rotDesenho : this.rotOutro;
+      const f = c.fisico;
+      pos.lerpVectors(f.posicaoAnterior, f.posicaoAtual, alfa);
+      rot.slerpQuaternions(f.rotacaoAnterior, f.rotacaoAtual, alfa);
+      c.visual.atualizar(pos, rot, [0, 1, 2, 3].map((i) => f.estadoRoda(i)));
+    }
 
     // Câmbio, som e efeitos: só leem o estado do carro, não mexem na física.
     const rodasLivres = !fisico.noChao || comandos.freioMao;
@@ -415,21 +440,19 @@ export class Jogo {
       return;
     }
     if (t.apertou('reposicionar')) this.reposicionar();
-    if (t.apertou('carro1')) void this.trocarCarro('carro1');
-    if (t.apertou('carro2')) void this.trocarCarro('carro2');
-    if (t.apertou('carro3')) void this.trocarCarro('carro3');
   }
 
   // ---------------------------------------------------------------------------
   // A pé (Etapa 9)
   // ---------------------------------------------------------------------------
 
-  /** Tecla E: desce do carro parado (só passeando) ou, a pé e perto dele, entra. */
+  /** Tecla E: desce do carro parado (só passeando) ou, a pé, entra no carro mais perto. */
   private entrarOuSair(): void {
     const f = this.carro.fisico;
     if (this.personagem.ativo) {
-      if (this.personagem.pertoDe(f.posicaoAtual)) this.subirNoCarro();
-      else this.hudCorrida?.avisar('🚗 Chegue perto do carro para entrar');
+      const perto = this.carroMaisPerto();
+      if (perto) this.subirNoCarro(perto);
+      else this.hudCorrida?.avisar('🚗 Chegue perto de um carro para entrar');
       return;
     }
     // Na corrida, descer seria trapaça (e o cronômetro continuaria correndo).
@@ -449,9 +472,33 @@ export class Jogo {
     this.puloPendente = false;
   }
 
-  private subirNoCarro(): void {
+  /**
+   * Entra num carro: ele passa a ser o carro do jogador. Fica salvo como o
+   * escolhido (a garagem do menu já abre nele da próxima vez).
+   */
+  private subirNoCarro(carro: Carro = this.carro): void {
+    if (carro !== this.carro) {
+      this.carro = carro;
+      // A busca na pista recomeça do zero: o carro novo pode estar em outro trecho.
+      this.indiceNaPista = undefined;
+      salvarEscolhas({ carro: carro.id });
+    }
     this.personagem.subir();
     this.camera.reiniciar();
+  }
+
+  /** O carro mais perto do personagem, se estiver ao alcance do E (ou null). */
+  private carroMaisPerto(): Carro | null {
+    let melhor: Carro | null = null;
+    let menor: number = tuning.aPe.distanciaParaEntrar;
+    for (const c of this.carros) {
+      const d = c.fisico.posicaoAtual.distanceTo(this.personagem.centro);
+      if (d < menor) {
+        menor = d;
+        melhor = c;
+      }
+    }
+    return melhor;
   }
 
   /** A pé: W/S anda, A/D vira, Shift corre (Espaço pula: ver tratarTeclasDeUmToque). */
@@ -732,35 +779,14 @@ export class Jogo {
     this.camera.reiniciar();
   }
 
-  /** Capotou no passeio: põe o carro de pé no mesmo lugar, apontando para onde estava. */
-  private desvirar(): void {
-    const f = this.carro.fisico;
+  /** Capotou no passeio (ou um estacionado levou uma pancada): põe de pé no mesmo lugar. */
+  private desvirar(carro: Carro): void {
+    const f = carro.fisico;
     const posicao = f.posicaoAtual.clone();
     const chao = this.cenario.alturaChao(posicao.x, posicao.z);
     posicao.y = Math.max(posicao.y, chao ?? posicao.y) + ALTURA_REPOSICIONAR;
     f.reposicionar(posicao, f.anguloHorizontal);
-    this.camera.reiniciar();
-  }
-
-  private async trocarCarro(id: IdCarro): Promise<void> {
-    if (this.trocandoCarro || id === this.carro.id) return;
-    this.trocandoCarro = true;
-    salvarEscolhas({ carro: id });
-    try {
-      const antigo = this.carro;
-      const posicao = antigo.fisico.posicaoAtual.clone();
-      posicao.y += ALTURA_REPOSICIONAR;
-      const novo = await this.criarCarro(id, posicao, antigo.fisico.anguloHorizontal);
-      antigo.fisico.destruir();
-      this.cena.remove(antigo.visual.objeto);
-      this.carro = novo;
-    } catch (erro) {
-      console.error(`Não consegui trocar para o ${id}:`, erro);
-    } finally {
-      // "finally" roda com ou sem erro. Sem ele, um erro deixaria a trava
-      // ligada para sempre e as teclas 1/2/3 parariam de funcionar.
-      this.trocandoCarro = false;
-    }
+    if (carro === this.carro && !this.personagem.ativo) this.camera.reiniciar();
   }
 
   private async criarCarro(id: IdCarro, posicao: Vector3, angulo: number): Promise<Carro> {

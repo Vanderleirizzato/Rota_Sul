@@ -1,5 +1,5 @@
 import { QUALIDADE_PADRAO, type NivelQualidade } from '../config/quality';
-import type { IdCarro } from '../world/assets';
+import { IDS_CARROS, type IdCarro } from '../world/assets';
 
 // =============================================================================
 // ESCOLHAS DO JOGADOR (carro e qualidade)
@@ -18,7 +18,6 @@ export interface Escolhas {
 
 const CHAVE = 'rotaSul.escolhas';
 const PADRAO: Escolhas = { carro: 'carro1', qualidade: QUALIDADE_PADRAO };
-const CARROS: readonly IdCarro[] = ['carro1', 'carro2', 'carro3'];
 const QUALIDADES: readonly NivelQualidade[] = ['baixo', 'medio', 'alto'];
 
 export function lerEscolhas(): Escolhas {
@@ -27,7 +26,7 @@ export function lerEscolhas(): Escolhas {
     // Confere cada valor: um dado velho (de uma versão antiga do jogo, por
     // exemplo um carro que não existe mais) não pode quebrar o jogo.
     return {
-      carro: CARROS.find((c) => c === salvo.carro) ?? PADRAO.carro,
+      carro: IDS_CARROS.find((c) => c === salvo.carro) ?? PADRAO.carro,
       qualidade: QUALIDADES.find((q) => q === salvo.qualidade) ?? PADRAO.qualidade,
     };
   } catch {

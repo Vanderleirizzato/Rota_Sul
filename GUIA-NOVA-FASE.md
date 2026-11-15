@@ -68,6 +68,7 @@ Tudo que fica **ao longo da pista** usa `distancia`, em metros desde o primeiro 
 | `barreiras` | muros fixos na beira das curvas perigosas |
 | `soltos` | cones e barreiras de plástico que voam na batida |
 | `outdoors`, `portico`, `insetos`, `trofeu` | os easter eggs (todos opcionais) |
+| `estacionamento` | onde os 3 carros do jogador começam parados (antes de `trafego.inicio`) |
 | `tempoParaLiberar` | tempo-meta (s): terminar a corrida abaixo dele libera a próxima fase da lista |
 | `pecas` | peças de tuning (`'turbo'`, `'pneus'` ou `'nitro'`) espalhadas pelo mapa |
 

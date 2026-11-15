@@ -21,7 +21,7 @@ Atalhos de endereço (bons para testar):
 
 ## Como se joga
 
-A viagem começa sempre em **Foz do Iguaçu**, em **modo passeio**: o mapa é livre, sem cronômetro. A bússola no alto da tela aponta a **coluna de luz amarela** da largada; pare dentro do anel dela e aperte **Enter** para a corrida começar. Durante a corrida valem o cronômetro e a volta automática para a pista.
+A viagem começa sempre em **Foz do Iguaçu**, **a pé**, atrás dos três carros estacionados: chegue perto do que quiser e aperte **E** para entrar. Depois é o **modo passeio**: o mapa é livre, sem cronômetro. A bússola no alto da tela aponta a **coluna de luz amarela** da largada; pare dentro do anel dela e aperte **Enter** para a corrida começar. Durante a corrida valem o cronômetro e a volta automática para a pista.
 
 - **Tempo-meta:** terminar a corrida abaixo dele libera a próxima cidade. Aí aparece uma **coluna azul** logo depois da chegada: pare nela e aperte Enter para seguir viagem (ou **N** na tela de chegada).
 - **Peças de tuning:** engrenagens brilhantes espalhadas pelo mapa (algumas no caminho da corrida, outras escondidas). Cada uma deixa o carro um pouco melhor, para sempre: 🟠 turbo (motor), 🔵 pneus (aderência), 🟣 nitro (dura mais).
@@ -44,8 +44,7 @@ A viagem começa sempre em **Foz do Iguaçu**, em **modo passeio**: o mapa é li
 | Trocar câmera | C | Y |
 | Pausar | Esc | Start |
 | Voltar ao menu (na pausa ou no fim) | M | B |
-| Trocar de carro | 1 / 2 / 3 | |
-| Descer do carro / entrar de novo (no passeio) | E | LB |
+| Descer do carro / entrar num carro (no passeio) | E | LB |
 | Painel de tuning (Modo Dev) | F2 | |
 
 **A pé** (depois do E): W/S anda, A/D vira, Shift corre, Espaço pula e R volta para o lado do carro. Dá para pegar peças a pé, mas corrida e viagem são de carro.

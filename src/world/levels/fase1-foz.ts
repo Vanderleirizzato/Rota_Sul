@@ -63,6 +63,9 @@ export const FASE1_FOZ: DadosFase = {
   },
 
   largada: 90,
+  // Os 3 carros do jogador, lado a lado no fundo da área de largada (o
+  // trânsito só começa aos 25 m). O jogador começa a pé, logo atrás deles.
+  estacionamento: { distancia: 12, espacamento: 3.4 },
   chegada: 2930,
   bioma: 'mataAtlantica',
 

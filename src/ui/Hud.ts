@@ -114,12 +114,12 @@ export class Hud {
     if (this.aPe) {
       this.dicas.innerHTML =
         `A pé &nbsp;·&nbsp; <kbd>W</kbd>/<kbd>S</kbd> andar &nbsp;<kbd>A</kbd>/<kbd>D</kbd> virar &nbsp;<kbd>Shift</kbd> correr &nbsp;` +
-        `<kbd>Espaço</kbd> pular &nbsp;<kbd>E</kbd> entrar no carro &nbsp;<kbd>R</kbd> voltar ao carro &nbsp;<kbd>Esc</kbd> pausar`;
+        `<kbd>Espaço</kbd> pular &nbsp;<kbd>E</kbd> entrar num carro &nbsp;<kbd>R</kbd> voltar ao carro &nbsp;<kbd>Esc</kbd> pausar`;
       return;
     }
     this.dicas.innerHTML =
       `Câmera: ${camera} &nbsp;·&nbsp; <kbd>C</kbd> câmera &nbsp;<kbd>R</kbd> reposicionar &nbsp;<kbd>T</kbd> correr da largada &nbsp;<kbd>E</kbd> descer &nbsp;` +
-      `<kbd>Esc</kbd> pausar &nbsp;<kbd>F2</kbd> tuning &nbsp;<kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> carro`;
+      `<kbd>Esc</kbd> pausar &nbsp;<kbd>F2</kbd> tuning`;
   }
 
   /** Desenha o trilho, a faixa vermelha e os números (1, 2, 3... mil rpm). */

@@ -1,6 +1,5 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import { Vector3, type Scene } from 'three';
-import { tuning } from '../config/tuning';
 import { CENTRO_ATE_PE, PersonagemFisico, type ComandosAPe } from '../physics/PersonagemFisico';
 import { PersonagemVisual, type PoseAPe } from '../graphics/PersonagemVisual';
 import { obterAnimacoes, obterModelo } from '../world/CarregadorModelos';
@@ -67,14 +66,18 @@ export class Personagem {
     const distancia = meiaLarguraCarro + FOLGA_PORTA;
     let lado = esquerda;
     if (this.bloqueado(posCarro, esquerda, distancia, corpoCarro)) lado = esquerda.clone().negate();
-    const pe = posCarro.clone().addScaledVector(lado, distancia);
+    this.aparecer(posCarro.clone().addScaledVector(lado, distancia), anguloCarro);
+  }
+
+  /** Aparece a pé num lugar (começo da fase, ou ao descer do carro). `pe` = onde fica a sola do pé. */
+  aparecer(pe: Vector3, angulo: number): void {
     // Um pouco acima do chão: o personagem "pousa" no primeiro passo.
-    pe.y += 0.2;
+    const acima = pe.clone().setY(pe.y + 0.2);
     this.fisico.ativar(true);
-    this.fisico.reposicionar(pe, anguloCarro);
+    this.fisico.reposicionar(acima, angulo);
     this.ativo = true;
-    this.pe.copy(pe);
-    this.angulo = anguloCarro;
+    this.pe.copy(acima);
+    this.angulo = angulo;
     this.visual.mostrar(true);
   }
 
@@ -83,16 +86,6 @@ export class Personagem {
     this.ativo = false;
     this.fisico.ativar(false);
     this.visual.mostrar(false);
-  }
-
-  /** Perto o bastante do carro para entrar? */
-  pertoDe(posCarro: Vector3): boolean {
-    return this.centro.distanceTo(posCarro) < tuning.aPe.distanciaParaEntrar;
-  }
-
-  /** Caiu na água ou do mapa: volta para o lado do carro. */
-  voltarParaOCarro(posCarro: Vector3, anguloCarro: number, meiaLarguraCarro: number, corpoCarro: RAPIER.RigidBody): void {
-    this.descer(posCarro, anguloCarro, meiaLarguraCarro, corpoCarro);
   }
 
   guardarEstadoAnterior(): void {

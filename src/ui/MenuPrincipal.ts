@@ -7,7 +7,7 @@ import { irParaFase, type EstadoMenu } from '../core/Estados';
 import { formatarTempo } from '../core/Corrida';
 import { lerRecorde } from '../core/Recordes';
 import { Garagem } from '../graphics/Garagem';
-import { MODELOS, type IdCarro } from '../world/assets';
+import { IDS_CARROS as CARROS, MODELOS } from '../world/assets';
 import { FASES, FASE_INICIAL } from '../world/levels';
 import { ORDEM_FASES, faseEstaLiberada } from '../core/Progresso';
 
@@ -24,7 +24,6 @@ import { ORDEM_FASES, faseEstaLiberada } from '../core/Progresso';
 // pequeno, é mais simples que atualizar pedacinho por pedacinho.
 // =============================================================================
 
-const CARROS: readonly IdCarro[] = ['carro1', 'carro2', 'carro3'];
 const NIVEIS: readonly NivelQualidade[] = ['baixo', 'medio', 'alto'];
 const OPCOES = ['jogar', 'qualidade', 'creditos'] as const;
 type Opcao = (typeof OPCOES)[number];
