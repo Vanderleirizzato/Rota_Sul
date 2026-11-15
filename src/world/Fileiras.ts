@@ -154,7 +154,7 @@ export async function colocarFileiras(
  * "halo" em volta delas. Luz de verdade (PointLight) em cada poste seria
  * pesada demais: cada luz a mais encarece TODOS os materiais da cena.
  */
-function criarLampadas(posicoes: Vector3[]): InstancedMesh {
+export function criarLampadas(posicoes: Vector3[]): InstancedMesh {
   const malha = new InstancedMesh(
     new SphereGeometry(RAIO_LAMPADA, 10, 8),
     // toneMapped: false deixa a cor "estourar" acima do branco, como uma lâmpada.

@@ -105,6 +105,28 @@ export const FASE1_FOZ: DadosFase = {
   // livre (sem voltar sozinho para a estrada) até a estátua do cervo.
   patios: [{ inicio: 1832, fim: 1868, lado: 'esquerda', largura: 22 }],
 
+  // Bairro de Foz ao lado da largada (e do estacionamento): ruas para passear
+  // a pé ou de carro antes de começar a corrida. Fica no trecho reto antes da
+  // largada, que vai até o bloqueio do começo da estrada.
+  bairros: [
+    {
+      lado: 'esquerda',
+      inicio: -240,
+      fim: 60,
+      fileirasDeQuadras: 2,
+      quadra: 40,
+      rua: 10,
+      construcoes: [
+        ['casa', 'casa2', 'predioPequeno', 'bar'], // perto da estrada: casas e comércio
+        ['casa', 'casa2', 'predioVermelho', 'predioApartamentos'],
+      ],
+      pracas: 0.2,
+      carrosEstacionados: 0.3,
+      modelosCarros: ['taxi', 'esportivo', 'caminhao', 'viatura'],
+      postesAcesos: false, // é de manhã
+    },
+  ],
+
   // O rio passa por baixo da reta da ponte. A cachoeira fica 60 m rio acima,
   // à esquerda: dá para vê-la de cima da ponte.
   rio: {

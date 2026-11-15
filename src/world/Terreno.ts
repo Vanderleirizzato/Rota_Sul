@@ -51,6 +51,8 @@ const enum Chao {
 const COR_PATIO = 0x8e8c86;
 /** Pátio: o chão fica este tanto (m) abaixo do asfalto. Pouco: sem degrau na beira. */
 const PATIO_ABAIXO_DO_ASFALTO = 0.08;
+/** Peso de pátio (0 a 1) a partir do qual o chão começa a ficar cinza e sem mato. */
+const PATIO_COR_DESDE = 0.85;
 /** Depois da linha d'água, o fundo do mar desce até esta profundidade (m)... */
 const PROFUNDIDADE_MAR = 4;
 /** ...ao longo deste tanto (m). */
@@ -179,7 +181,8 @@ export class Terreno {
   /** Este ponto fica num pátio? (Lá não se planta nada.) */
   estaEmPatio(p: Vector3): boolean {
     if (this.patios.length === 0) return false;
-    return this.calcularAltura(p).pavimento > 0.01;
+    // No barranco em volta do pátio (peso baixo) ainda nasce mato.
+    return this.calcularAltura(p).pavimento > PATIO_COR_DESDE;
   }
 
   private calcularAltura(p: Vector3): { altura: number; fora: number; chao: Chao; pavimento: number } {
@@ -321,7 +324,9 @@ export class Terreno {
         cor.lerp(terra, 1 - transicao(2, 7, this.foraDaPista[k]));
         cor.lerp(rocha, 1 - transicao(INCLINACAO_PEDRA - 0.12, INCLINACAO_PEDRA, normais.getY(k)));
       }
-      cor.lerp(patio, this.pavimento[k]);
+      // Só o chão (quase) plano do pátio fica cinza; o barranco em volta
+      // mantém a cor de morro (senão vira um paredão de concreto).
+      cor.lerp(patio, transicao(PATIO_COR_DESDE, 1, this.pavimento[k]));
       cores.set([cor.r, cor.g, cor.b], k * 3);
     }
     return cores;

@@ -29,6 +29,9 @@ function paredeAtravessada(distancia: number): ObjetoFase[] {
   ]);
 }
 
+/** Trecho (m) da avenida ocupado pelo bairro: as fileiras da avenida param aqui. */
+const VAO_BAIRRO: [number, number] = [1010, 1370];
+
 /**
  * Grupo de capivaras pastando: uma "fileira" bem curta e apertada, com cada
  * bicho virado para um lado e um pouco fora da linha. Algumas são filhotes.
@@ -125,6 +128,28 @@ export const FASE2_NAVEGANTES: DadosFase = {
     { inicio: 3800, fim: 4900, lado: 'direita', largura: 34 },
   ],
 
+  // Bairro do lado da cidade, com ruas para explorar. As fileiras de prédios
+  // e postes da avenida têm um vão neste trecho (VAO_BAIRRO) para não ficarem
+  // em cima das ruas.
+  bairros: [
+    {
+      lado: 'esquerda',
+      inicio: VAO_BAIRRO[0],
+      fim: VAO_BAIRRO[1],
+      fileirasDeQuadras: 2,
+      quadra: 40,
+      rua: 10,
+      construcoes: [
+        ['casa', 'casa2', 'predioPequeno', 'bar'], // de frente para a avenida
+        ['predioApartamentos', 'predioVermelho', 'predioGrande', 'predioPequeno'],
+      ],
+      pracas: 0.15,
+      carrosEstacionados: 0.35,
+      modelosCarros: ['taxi', 'esportivo', 'viatura', 'foodTruck'],
+      postesAcesos: true, // pôr do sol
+    },
+  ],
+
   fileiras: [
     // --- orla (lado do mar) ---------------------------------------------------
     { modelos: ['posteLampiao'], lado: 'direita', afastamento: 9.5, espacamento: 30, inicio: 140, fim: 3760, colisor: 'tronco', raioTronco: 0.12, acesa: true, derrubavel: true },
@@ -137,22 +162,22 @@ export const FASE2_NAVEGANTES: DadosFase = {
 
     // --- avenida (lado da cidade) ----------------------------------------------
     // O braço do poste aponta para a pista: a lâmpada fica sobre o acostamento.
-    { modelos: ['posteRua'], lado: 'esquerda', afastamento: 7.8, espacamento: 40, inicio: 130, fim: 3780, colisor: 'tronco', raioTronco: 0.15, acesa: true, derrubavel: true },
+    { modelos: ['posteRua'], lado: 'esquerda', afastamento: 7.8, espacamento: 40, inicio: 130, fim: 3780, colisor: 'tronco', raioTronco: 0.15, acesa: true, derrubavel: true, vaos: [VAO_BAIRRO] },
     // Primeira quadra: casas e prédios baixos. O vão é onde fica o bar.
     {
       modelos: ['casa', 'casa2', 'predioPequeno', 'predioVermelho'], lado: 'esquerda', afastamento: 24, espacamento: 20,
-      inicio: 150, fim: 3700, variacaoAfastamento: 3, falhas: 0.12, vaos: [[600, 640]], colisor: 'caixa',
+      inicio: 150, fim: 3700, variacaoAfastamento: 3, falhas: 0.12, vaos: [[600, 640], VAO_BAIRRO], colisor: 'caixa',
     },
     // Segunda quadra, atrás: os prédios altos.
     {
       modelos: ['predioApartamentos', 'predioGrande', 'predioVermelho'], lado: 'esquerda', afastamento: 52, espacamento: 34,
-      inicio: 160, fim: 3720, variacaoAfastamento: 6, falhas: 0.1, colisor: 'caixa',
+      inicio: 160, fim: 3720, variacaoAfastamento: 6, falhas: 0.1, vaos: [VAO_BAIRRO], colisor: 'caixa',
     },
 
     // --- capivaras ----------------------------------------------------------
     // Na grama do lado da cidade e na areia da praia, longe dos postes.
     grupoDeCapivaras(424, 'esquerda', 11),
-    grupoDeCapivaras(1150, 'esquerda', 12, 5),
+    grupoDeCapivaras(1470, 'esquerda', 12, 5),
     grupoDeCapivaras(2052, 'esquerda', 11, 3),
     grupoDeCapivaras(3305, 'esquerda', 12),
     grupoDeCapivaras(800, 'direita', 20, 3),

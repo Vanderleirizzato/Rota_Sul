@@ -62,6 +62,7 @@ Tudo que fica **ao longo da pista** usa `distancia`, em metros desde o primeiro 
 | `fileiras` | muitos objetos iguais em fila: postes, coqueiros, prédios, contêineres |
 | `rio` / `mar` | rio com ponte e cachoeira; ou mar de um lado, com praia |
 | `patios` | área calçada fora da pista onde o carro anda livre (porto, desvio secreto) |
+| `bairros` | pedaço de cidade com ruas em grade, casas, praças e carros estacionados (ver `DadosBairro`). Escolha um trecho quase reto e abra um `vaos` nas `fileiras` que passariam por ele |
 | `plateia` | gente torcendo atrás das barreiras |
 | `andarilhos` | mochileiros no acostamento |
 | `trafego` | quantos veículos, de que tipos e em que velocidade |

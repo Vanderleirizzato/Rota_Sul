@@ -56,6 +56,40 @@ export interface ObjetoFase {
 }
 
 /**
+ * Bairro: um pedaço de cidade ao lado da estrada, com ruas em grade para
+ * explorar. A grade é medida a partir da beira da estrada: ruas
+ * "transversais" saem dela para longe, e ruas "paralelas" correm ao lado
+ * dela. Entre as ruas ficam as quadras, com casas e prédios virados para a
+ * rua, postes nas esquinas e carros estacionados no meio-fio. Escolha um
+ * trecho de estrada quase reto: numa curva fechada a grade "entorta".
+ */
+export interface DadosBairro {
+  lado: Lado;
+  /** Trecho da estrada (m) onde o bairro encosta. */
+  inicio: number;
+  fim: number;
+  /** Quantas fileiras de quadras, da estrada para longe. */
+  fileirasDeQuadras: number;
+  /** Tamanho de cada quadra (m), quadrada. Maior: mais casas por quadra, menos ruas. */
+  quadra: number;
+  /** Largura das ruas (m). Com menos de ~9 m, os carros estacionados apertam a passagem. */
+  rua: number;
+  /**
+   * Modelos sorteados para as construções, uma lista por fileira de quadras
+   * (a primeira é a da beira da estrada). Faltando lista, repete a última.
+   */
+  construcoes: IdModelo[][];
+  /** Chance (0 a 1) de uma quadra virar praça com árvores, em vez de casas. */
+  pracas?: number;
+  /** Chance (0 a 1) de cada vaga do meio-fio ter um carro estacionado. */
+  carrosEstacionados?: number;
+  /** Modelos dos carros estacionados (os mesmos do trânsito). */
+  modelosCarros: IdModelo[];
+  /** Postes acesos (fim de tarde/noite)? De manhã, a lâmpada apagada fica melhor. */
+  postesAcesos?: boolean;
+}
+
+/**
  * Uma FILEIRA de objetos iguais (ou sorteados de uma lista) ao longo da pista:
  * coqueiros da orla, postes, prédios, pilhas de contêineres. Em vez de listar
  * 150 coqueiros um por um, dizemos "um a cada 24 m, deste trecho até aquele".
@@ -121,6 +155,12 @@ export interface DadosPatio {
   lado: Lado;
   /** Largura (m) a partir da beira do acostamento. */
   largura: number;
+  /**
+   * Ao longo de quantos metros, nas bordas, o chão volta ao normal (padrão: 10
+   * na borda de fora e 12 nas pontas). Maior: barranco mais suave em volta do
+   * pátio, em vez de um paredão, mas o pátio "engole" mais terreno.
+   */
+  suavizar?: number;
 }
 
 /** Rio atravessando a pista por baixo de uma ponte. */
@@ -192,6 +232,8 @@ export interface DadosFase {
   rio?: DadosRio;
   mar?: DadosMar;
   patios?: DadosPatio[];
+  /** Bairros com ruas para explorar (ver DadosBairro). */
+  bairros?: DadosBairro[];
   plateia: DadosPlateia[];
   andarilhos?: DadosAndarilhos;
   trafego?: DadosTrafego;

@@ -22,6 +22,7 @@ import { colocarPortico } from './Portico';
 import { Insetos } from './Insetos';
 import { Trofeu } from './Trofeu';
 import { Bloqueios } from './Bloqueios';
+import { colocarBairros, patioDoBairro } from './Bairro';
 import { colocarLimites, RECUO_LIMITES } from './LimitesMundo';
 import { Pecas } from './Pecas';
 import { tuning } from '../config/tuning';
@@ -41,7 +42,9 @@ const ATRAS_DOS_CARROS = 7;
 export async function construirFase(dados: DadosFase, cena: Scene, fisica: MundoFisico): Promise<Cenario> {
   const tracado = new Tracado(dados.tracado, dados.pista, prolongamentos(dados.tracado));
   construirPista(cena, fisica, tracado, dados.largada, dados.chegada);
-  const patios = dados.patios ?? [];
+  // Cada bairro também é um pátio: chão plano onde o carro anda livre.
+  const bairros = dados.bairros ?? [];
+  const patios = [...(dados.patios ?? []), ...bairros.map(patioDoBairro)];
   const terreno = new Terreno(cena, fisica, tracado, BIOMAS[dados.bioma], { rio: dados.rio, mar: dados.mar, patios });
   // No passeio o mapa é livre: paredes invisíveis na borda seguram o carro.
   colocarLimites(fisica, terreno);
@@ -59,11 +62,12 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   const pecas = new Pecas(cena, tracado, terreno, dados.id, dados.pecas ?? []);
 
   // Tudo que depende de baixar arquivos .glb roda em paralelo.
-  const [vegetacao, , postes, bloqueios] = await Promise.all([
+  const [vegetacao, , postes, , bloqueios] = await Promise.all([
     // Abaixo da água (rio ou mar) nada nasce.
     plantarVegetacao(cena, fisica, tracado, terreno, BIOMAS[dados.bioma], dados.rio?.nivel ?? dados.mar?.nivel),
     colocarObjetos(cena, fisica, tracado, terreno, dados.objetos),
     colocarFileiras(cena, fisica, tracado, terreno, dados.fileiras ?? []),
+    colocarBairros(cena, fisica, tracado, terreno, bairros),
     // Fim da estrada: "pista interditada" nas duas pontas.
     Bloqueios.criar(cena, fisica, tracado),
     barreirasNasPontas(cena, tracado, 'barreiraConcreto'),

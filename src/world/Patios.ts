@@ -27,8 +27,10 @@ export function pesoPatio(patios: readonly DadosPatio[], distancia: number, late
     const sinal = p.lado === 'esquerda' ? 1 : -1;
     // Em cima da pista vale qualquer lado; fora dela, só o lado do pátio.
     if (fora > 0 && Math.sign(lateral) !== sinal) continue;
-    const aoLongo = transicao(p.inicio - SUAVIZAR_PONTAS, p.inicio, distancia) * (1 - transicao(p.fim, p.fim + SUAVIZAR_PONTAS, distancia));
-    const atraves = 1 - transicao(p.largura, p.largura + SUAVIZAR_BORDA, fora);
+    const pontas = p.suavizar ?? SUAVIZAR_PONTAS;
+    const borda = p.suavizar ?? SUAVIZAR_BORDA;
+    const aoLongo = transicao(p.inicio - pontas, p.inicio, distancia) * (1 - transicao(p.fim, p.fim + pontas, distancia));
+    const atraves = 1 - transicao(p.largura, p.largura + borda, fora);
     peso = Math.max(peso, aoLongo * atraves);
   }
   return peso;
