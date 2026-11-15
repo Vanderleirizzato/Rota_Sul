@@ -92,9 +92,16 @@ export const FASE2_NAVEGANTES: DadosFase = {
   },
 
   largada: 90,
-  // Os 3 carros do jogador, lado a lado no fundo da área de largada (o
-  // trânsito só começa aos 25 m). O jogador começa a pé, logo atrás deles.
-  estacionamento: { distancia: 12, espacamento: 3.4 },
+  // O jogador começa a pé na calçada da avenida. Os 3 carros dele estão
+  // espalhados perto da largada: no gramado do lado da cidade e no calçadão.
+  estacionamento: {
+    inicioAPe: { distancia: 5, lado: 'esquerda', afastamento: 8 },
+    vagas: [
+      { distancia: 30, lado: 'esquerda', afastamento: 13 },
+      { distancia: -50, lado: 'esquerda', afastamento: 20, rotacao: 35 },
+      { distancia: 60, lado: 'direita', afastamento: 10 }, // no calçadão, de frente para o mar
+    ],
+  },
   chegada: 4480,
   bioma: 'litoral',
 
@@ -145,7 +152,7 @@ export const FASE2_NAVEGANTES: DadosFase = {
       ],
       pracas: 0.15,
       carrosEstacionados: 0.35,
-      modelosCarros: ['taxi', 'esportivo', 'viatura', 'foodTruck'],
+      modelosCarros: ['taxi', 'esportivo', 'viatura', 'caminhao'],
       postesAcesos: true, // pôr do sol
     },
   ],

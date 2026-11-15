@@ -11,7 +11,8 @@ import { Iluminacao, LUZ_PADRAO, type ConfigLuz } from '../graphics/Iluminacao';
 import { PosProcessamento } from '../graphics/PosProcessamento';
 import { criarRenderizador } from '../graphics/Renderizador';
 import { obterModelo } from '../world/CarregadorModelos';
-import { IDS_CARROS, MODELOS, type IdCarro, type InfoModelo } from '../world/assets';
+import { IDS_CARROS, MODELOS, type IdModelo, type InfoModelo } from '../world/assets';
+import type { CarroDisponivel } from '../world/Cenario';
 import { criarPistaTeste } from '../world/PistaTeste';
 import type { Cenario, EstadoCarro } from '../world/Cenario';
 import { construirFase } from '../world/Fase';
@@ -48,9 +49,11 @@ import { MensagemEasterEgg } from '../ui/MensagemEasterEgg';
 import { Personagem } from './Personagem';
 import type { ComandosAPe } from '../physics/PersonagemFisico';
 
-/** O carro do jogador: física e visual andam juntos. */
+/** Um carro dirigível: física e visual andam juntos. */
 interface Carro {
-  id: IdCarro;
+  id: IdModelo;
+  /** Um dos 3 carros do jogador? (Os outros foram pegos do trânsito ou de um bairro.) */
+  proprio: boolean;
   fisico: VeiculoFisico;
   visual: CarroVisual;
 }
@@ -62,6 +65,11 @@ const DEPOIS_DA_CHEGADA = 30;
 /** Comandos do carro enquanto o jogador está a pé: parado, com o freio de mão puxado. */
 const CARRO_ESTACIONADO: ComandosCarro = { acelerar: false, frear: false, direcao: 0, freioMao: true, nitro: false };
 const EIXO_Y = new Vector3(0, 1, 0);
+/**
+ * Quantos carros pegos do cenário ficam no mapa. Cada um roda a física o
+ * tempo todo (suspensão, rodas): passando disto, o mais antigo some.
+ */
+const MAXIMO_PEGOS = 3;
 
 /**
  * Junta todas as peças e roda o laço principal.
@@ -87,8 +95,10 @@ export class Jogo {
   private readonly verColisores = new VerColisores(this.cena, this.fisica);
   private readonly telaFim = new TelaFimFase();
   private readonly mensagemEasterEgg = new MensagemEasterEgg();
-  /** Os três carros do jogador, na ordem carro1, carro2, carro3. */
+  /** Os três carros do jogador (carro1, carro2, carro3) e, depois deles, os que ele pegou do cenário. */
   private carros: Carro[] = [];
+  /** Um carro do cenário está sendo trocado por um de verdade (leva um instante: ver pegarCarro). */
+  private pegandoCarro = false;
   /**
    * O carro que o jogador está dirigindo (ou o último em que esteve, quando
    * está a pé): é dele o velocímetro, o som, e para o lado dele que o R leva.
@@ -193,12 +203,12 @@ export class Jogo {
     jogo.cenario.aplicarQualidade(QUALIDADES[jogo.nivelQualidade]);
     const largada = jogo.cenario.largada;
     // Os três carros estacionados lado a lado; o jogador começa a pé, logo
-    // atrás, e escolhe em qual entrar (tecla E). O da garagem do menu é o
+    // atrás, e escolhe em qual entrar (tecla E). O último em que ele entrou é o
     // "seu carro" até lá (o R a pé leva para o lado dele).
     const vagas = jogo.cenario.vagas;
     jogo.carros = await Promise.all(IDS_CARROS.map((id, k) => jogo.criarCarro(id, vagas[k].posicao, vagas[k].angulo)));
     jogo.carro = jogo.carros.find((c) => c.id === lerEscolhas().carro) ?? jogo.carros[0];
-    jogo.personagem = await Personagem.criar(jogo.cena, jogo.fisica.mundo);
+    jogo.personagem = await Personagem.criar(jogo.cena, jogo.fisica.mundo, lerEscolhas().personagem);
     jogo.personagem.aparecer(jogo.cenario.inicioAPe.posicao, jogo.cenario.inicioAPe.angulo);
     if (jogo.cenario.chegada !== null) {
       // O jogo começa passeando; a corrida começa no marcador, na largada.
@@ -451,7 +461,12 @@ export class Jogo {
     const f = this.carro.fisico;
     if (this.personagem.ativo) {
       const perto = this.carroMaisPerto();
-      if (perto) this.subirNoCarro(perto);
+      // Um carro do trânsito ou estacionado num bairro também serve.
+      const centro = this.personagem.centro;
+      const doCenario = this.cenario.carroDisponivel(centro, tuning.aPe.distanciaParaEntrar);
+      const distanciaPerto = perto ? perto.fisico.posicaoAtual.distanceTo(centro) : Infinity;
+      if (doCenario && doCenario.distancia < distanciaPerto) void this.pegarCarro(doCenario);
+      else if (perto) this.subirNoCarro(perto);
       else this.hudCorrida?.avisar('🚗 Chegue perto de um carro para entrar');
       return;
     }
@@ -474,17 +489,55 @@ export class Jogo {
 
   /**
    * Entra num carro: ele passa a ser o carro do jogador. Fica salvo como o
-   * escolhido (a garagem do menu já abre nele da próxima vez).
+   * escolhido (da próxima vez, o R a pé leva para o lado dele).
    */
   private subirNoCarro(carro: Carro = this.carro): void {
     if (carro !== this.carro) {
       this.carro = carro;
       // A busca na pista recomeça do zero: o carro novo pode estar em outro trecho.
       this.indiceNaPista = undefined;
-      salvarEscolhas({ carro: carro.id });
+      // Só os carros do jogador viram a escolha salva.
+      const proprio = IDS_CARROS.find((id) => id === carro.id);
+      if (proprio) salvarEscolhas({ carro: proprio });
     }
     this.personagem.subir();
     this.camera.reiniciar();
+  }
+
+  /**
+   * Pega um carro do cenário: ele some de lá, e no mesmo lugar aparece um
+   * carro de verdade (rodas, suspensão, motor), igual aos do jogador. É
+   * assíncrono porque o modelo pode precisar ser preparado (já baixado, é
+   * rápido); enquanto isso, um segundo E é ignorado.
+   */
+  private async pegarCarro(d: CarroDisponivel): Promise<void> {
+    if (this.pegandoCarro) return;
+    this.pegandoCarro = true;
+    d.pegar();
+    const posicao = d.posicao.clone();
+    posicao.y += ALTURA_REPOSICIONAR;
+    try {
+      const novo = await this.criarCarro(d.modelo, posicao, d.angulo, false);
+      this.carros.push(novo);
+      this.descartarPegosAntigos();
+      this.subirNoCarro(novo);
+    } catch (erro) {
+      // Ex.: o nome de uma roda no manifesto não bate com o modelo.
+      console.warn(`Não deu para dirigir o ${d.modelo}:`, erro);
+    } finally {
+      this.pegandoCarro = false;
+    }
+  }
+
+  /** Muitos carros pegos: o mais antigo (que não seja o atual) some do mapa. */
+  private descartarPegosAntigos(): void {
+    const pegos = this.carros.filter((c) => !c.proprio && c !== this.carro);
+    while (pegos.length > MAXIMO_PEGOS - 1) {
+      const velho = pegos.shift()!;
+      this.cena.remove(velho.visual.objeto);
+      velho.fisico.destruir();
+      this.carros.splice(this.carros.indexOf(velho), 1);
+    }
   }
 
   /** O carro mais perto do personagem, se estiver ao alcance do E (ou null). */
@@ -789,7 +842,7 @@ export class Jogo {
     if (carro === this.carro && !this.personagem.ativo) this.camera.reiniciar();
   }
 
-  private async criarCarro(id: IdCarro, posicao: Vector3, angulo: number): Promise<Carro> {
+  private async criarCarro(id: IdModelo, posicao: Vector3, angulo: number, proprio = true): Promise<Carro> {
     const info: InfoModelo = MODELOS[id];
     if (!info.rodas) throw new Error(`O modelo ${id} não tem rodas no manifesto.`);
     const visual = new CarroVisual(await obterModelo(id), info.rodas);
@@ -797,7 +850,7 @@ export class Jogo {
     colocarPlaca(visual, info.alturaPlaca ?? visual.geometria.raioRoda * 1.4);
     this.cena.add(visual.objeto);
     const fisico = new VeiculoFisico(this.fisica.mundo, visual.geometria, posicao, angulo);
-    return { id, fisico, visual };
+    return { id, proprio, fisico, visual };
   }
 
   private aoRedimensionar(): void {

@@ -21,7 +21,7 @@ Atalhos de endereço (bons para testar):
 
 ## Como se joga
 
-A viagem começa sempre em **Foz do Iguaçu**, **a pé**, atrás dos três carros estacionados: chegue perto do que quiser e aperte **E** para entrar. Depois é o **modo passeio**: o mapa é livre, sem cronômetro. A bússola no alto da tela aponta a **coluna de luz amarela** da largada; pare dentro do anel dela e aperte **Enter** para a corrida começar. Durante a corrida valem o cronômetro e a volta automática para a pista.
+No menu você escolhe o **personagem** (seis, cada um com seu nome) e, nesta fase de testes, a **cidade** (as duas estão liberadas; para voltar à progressão normal, mude `TODAS_LIBERADAS_PARA_TESTE` para `false` em `src/core/Progresso.ts`). A viagem começa sempre em **Foz do Iguaçu**, **a pé**: os seus três carros estão estacionados em ruas diferentes do bairro ao lado da largada. Ande até o que quiser e aperte **E** para entrar. Dá para pegar também os carros do trânsito e os estacionados nos bairros (táxi, esportivo, viatura e caminhão). Depois é o **modo passeio**: o mapa é livre, sem cronômetro. A bússola no alto da tela aponta a **coluna de luz amarela** da largada; pare dentro do anel dela e aperte **Enter** para a corrida começar. Durante a corrida valem o cronômetro e a volta automática para a pista.
 
 - **Tempo-meta:** terminar a corrida abaixo dele libera a próxima cidade. Aí aparece uma **coluna azul** logo depois da chegada: pare nela e aperte Enter para seguir viagem (ou **N** na tela de chegada).
 - **Peças de tuning:** engrenagens brilhantes espalhadas pelo mapa (algumas no caminho da corrida, outras escondidas). Cada uma deixa o carro um pouco melhor, para sempre: 🟠 turbo (motor), 🔵 pneus (aderência), 🟣 nitro (dura mais).
@@ -66,6 +66,6 @@ No jogo publicado, o F2 só funciona depois de achar o segredo do porto. 🏆
 | `src/config/` | tuning e qualidade gráfica |
 | `src/core/` | laço principal, estados (menu/corrida), teclado e controle, som, recordes |
 | `src/physics/` | mundo do Rapier e o carro (veículo por raycast) |
-| `src/graphics/` | luz, céu, câmera, partículas, pós-processamento, garagem do menu |
+| `src/graphics/` | luz, céu, câmera, partículas, pós-processamento, vitrine de personagens do menu |
 | `src/world/` | construtor de pista, terreno, biomas, trânsito, objetos e fases |
 | `src/ui/` | HUD, menus, pausa, painel do Modo Dev |

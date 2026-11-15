@@ -27,12 +27,13 @@ O jogo é um presente para o Enzo, estudante do 2º ano de ADS. Além de diverti
 
 ## Estrutura do mundo
 - **Mapa livre por fase, corridas lineares.** Cada fase começa em **modo passeio**: o jogador anda livre pelo mapa, sem cronômetro. A corrida (uma pista sobre `CatmullRomCurve3`, com largada e chegada) começa num **marcador de missão** na largada, e só durante ela valem o cronômetro e a volta automática para a pista.
-- **Começa a pé.** O jogador aparece a pé atrás dos três carros dele, estacionados lado a lado (`estacionamento` nos dados da fase, antes de onde o trânsito começa), e entra no que quiser com `E`. Todos os carros rodam a física o tempo todo; os estacionados ficam de freio de mão puxado.
+- **Começa a pé.** O jogador escolhe o personagem no menu (não há escolha de carro) e aparece a pé. Os três carros dele ficam estacionados em lugares diferentes, fora da pista (`estacionamento` nos dados da fase), para ele andar e achar; entra no que quiser com `E`. Todos os carros rodam a física o tempo todo; os estacionados ficam de freio de mão puxado.
+- **Pegar carros do cenário.** A pé, `E` perto de um carro do trânsito ou estacionado num bairro troca o carro do cenário por um dirigível (só modelos com `rodas` no manifesto). No máximo 3 carros pegos ficam no mapa. Motos ainda não (precisam de física de duas rodas).
 - **A estrada não acaba do nada.** O traçado continua reto nas duas pontas até perto da borda do mundo e termina num bloqueio "pista interditada" (`Bloqueios.ts`). As distâncias dos dados não mudam: o trecho antes do primeiro ponto fica nas distâncias negativas (`Tracado.inicio`).
 - **Bairros** (`bairros` nos dados, `Bairro.ts`): ruas em grade ao lado da estrada, com casas, praças, postes e carros estacionados. O chão do bairro é um pátio (plano e livre).
 - Áreas escondidas fora da pista são bem-vindas para os segredos.
 - O jogador não pode cair para fora do mundo: paredes invisíveis na borda do terreno, e reposicionamento ao cair na água ou atravessar o chão.
-- **Progressão (Etapa 8):** o jogo começa sempre em Foz; terminar a corrida abaixo de um tempo-meta libera a próxima fase da lista (`src/world/levels/index.ts`). O progresso é salvo pelo id de cada fase, para dar para inserir cidades no meio da viagem sem quebrar saves.
+- **Progressão (Etapa 8):** o jogo começa sempre em Foz; terminar a corrida abaixo de um tempo-meta libera a próxima fase da lista (`src/world/levels/index.ts`). O progresso é salvo pelo id de cada fase, para dar para inserir cidades no meio da viagem sem quebrar saves. Durante os testes, `TODAS_LIBERADAS_PARA_TESTE` (em `Progresso.ts`) libera todas as cidades e o menu deixa escolher em qual começar.
 
 ## Assets 3D (`public/models/`)
 Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais dos arquivos podem diferir dos nomes citados nos prompts; inspecione a pasta e faça a correspondência.
@@ -57,16 +58,16 @@ Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais do
 - `W`/`↑` acelerar, `S`/`↓` frear e ré, `A`/`D` ou `←`/`→` direção.
 - `Espaço` freio de mão (drift), `Shift` nitro.
 - `R` reposicionar o carro na pista, `T` (re)começar a corrida da largada, `C` trocar câmera, `Esc` pausar.
-- `E` desce do carro no passeio (com o carro parado) e entra de novo perto dele. A pé: `W`/`S` anda, `A`/`D` vira, `Shift` corre, `Espaço` pula, `R` volta para o lado do carro.
+- `E` desce do carro no passeio (com o carro parado) e, a pé, entra no carro mais perto (os seus ou os do trânsito/bairros). A pé: `W`/`S` anda, `A`/`D` vira, `Shift` corre, `Espaço` pula, `R` volta para o lado do carro.
 - `Enter` no marcador de missão começa a corrida; na pausa, `Q` abandona a corrida; na chegada, `Enter` volta a passear e `N` segue para a próxima fase.
 
 ## Arquitetura Modular
 - `/src/config/`: `tuning.ts` e `quality.ts`.
-- `/src/core/`: loop principal, gerenciador de estados (Menu, Seleção de Carro, Jogando, Pausa, Fim de Fase), entrada do teclado e áudio sintetizado.
+- `/src/core/`: loop principal, gerenciador de estados (Menu, Seleção de Personagem, Jogando, Pausa, Fim de Fase), entrada do teclado e áudio sintetizado.
 - `/src/physics/`: mundo Rapier e física do veículo.
 - `/src/graphics/`: iluminação, pós-processamento, partículas (fumaça de drift, fogo do nitro) e câmera dinâmica com inércia.
 - `/src/world/`: `assets.ts`, construtor de pistas, biomas e tráfego. Fases em `/src/world/levels/`.
-- `/src/ui/`: HUD arcade (velocímetro digital, conta-giros, barra de nitro, cronômetro), menus, seletor de carros e fases, painel do Modo Dev.
+- `/src/ui/`: HUD arcade (velocímetro digital, conta-giros, barra de nitro, cronômetro), menus, seletor de personagem, painel do Modo Dev.
 
 ## Créditos
 Manter `CREDITOS.md` e uma tela de créditos no menu com o autor e a licença de cada modelo 3D. Onde o autor não for identificável pelo arquivo, deixar marcado como "a preencher".

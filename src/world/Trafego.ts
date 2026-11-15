@@ -6,7 +6,7 @@ import { MODELOS, type IdModelo, type InfoModelo } from './assets';
 import { obterAnimacoes, obterModelo } from './CarregadorModelos';
 import type { DadosTrafego, TipoVeiculo } from './levels/TiposFase';
 import type { Tracado } from './Tracado';
-import type { EstadoCarro } from './Cenario';
+import type { CarroDisponivel, EstadoCarro } from './Cenario';
 import { CARRO_JOGADOR } from './ContatoCarro';
 import { VeiculoTrafego, type MeiasMedidas, type Sentido } from './VeiculoTrafego';
 
@@ -130,6 +130,33 @@ export class Trafego {
     // Um por quadro no máximo: espalha o custo de criar ao longo do tempo.
     if (this.veiculos.length < this.dados.quantidade) this.tentarCriar();
     for (const v of this.veiculos) v.desenhar(alfa);
+  }
+
+  /**
+   * O veículo do trânsito mais perto de `p` que o jogador pode pegar (só os
+   * modelos com rodas no manifesto). A distância conta a partir da lataria,
+   * não do meio: num caminhão, a porta fica longe do centro.
+   */
+  disponivel(p: Vector3, raio: number): CarroDisponivel | null {
+    let melhor: CarroDisponivel | null = null;
+    for (const v of this.veiculos) {
+      const info: InfoModelo = MODELOS[v.modelo];
+      if (!info.rodas) continue;
+      const distancia = Math.max(0, v.posicao.distanceTo(p) - v.meias.z * 0.5);
+      if (distancia > raio || (melhor && distancia >= melhor.distancia)) continue;
+      const frente = new Vector3(0, 0, 1).applyQuaternion(v.objeto.quaternion);
+      melhor = {
+        modelo: v.modelo,
+        posicao: v.posicao.clone(),
+        angulo: Math.atan2(frente.x, frente.z),
+        distancia,
+        pegar: () => {
+          const k = this.veiculos.indexOf(v);
+          if (k >= 0) this.apagar(k);
+        },
+      };
+    }
+    return melhor;
   }
 
   /** Corrida reiniciada (tecla T): apaga todos; eles renascem em volta da largada. */

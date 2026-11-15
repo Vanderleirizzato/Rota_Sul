@@ -3,6 +3,23 @@ import type { ConfigLuz } from '../graphics/Iluminacao';
 import type { ConfigQualidade } from '../config/quality';
 import type { Tracado } from './Tracado';
 import type { PecaPega } from './Pecas';
+import type { IdModelo } from './assets';
+
+/**
+ * Um carro do cenário (do trânsito ou estacionado num bairro) que o jogador,
+ * a pé, pode pegar para dirigir. Só entram os modelos com rodas separadas no
+ * manifesto (`rodas`): a física do carro precisa delas.
+ */
+export interface CarroDisponivel {
+  modelo: IdModelo;
+  /** Onde ele está (no chão, embaixo do meio do carro) e para onde aponta. */
+  posicao: Vector3;
+  angulo: number;
+  /** Distância (m) até quem perguntou. */
+  distancia: number;
+  /** Tira o carro do cenário (o Jogo põe um carro de verdade no lugar dele). */
+  pegar(): void;
+}
 
 /** Onde o carro do jogador está e para onde vai (para o cenário reagir a ele). */
 export interface EstadoCarro {
@@ -77,6 +94,8 @@ export interface Cenario {
   colherPeca(): PecaPega | null;
   /** True uma única vez, quando o carro encosta no troféu escondido (ver Trofeu.ts). */
   pegouTrofeu(): boolean;
+  /** O carro do cenário mais perto de `p` que dá para pegar (até `raio` m), ou null. */
+  carroDisponivel(p: Vector3, raio: number): CarroDisponivel | null;
   /** Corrida reiniciada (tecla T): cones voltam ao lugar, trânsito recomeça. */
   reiniciar(): void;
   /** Liga/desliga o que pesa no cenário (árvores detalhadas, sombra da mata). */

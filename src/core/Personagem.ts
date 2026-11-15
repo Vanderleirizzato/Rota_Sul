@@ -3,6 +3,7 @@ import { Vector3, type Scene } from 'three';
 import { CENTRO_ATE_PE, PersonagemFisico, type ComandosAPe } from '../physics/PersonagemFisico';
 import { PersonagemVisual, type PoseAPe } from '../graphics/PersonagemVisual';
 import { obterAnimacoes, obterModelo } from '../world/CarregadorModelos';
+import { PERSONAGENS, type IdPersonagem } from '../world/assets';
 
 // =============================================================================
 // O PERSONAGEM: desce do carro (tecla E), anda pelo mapa e volta para ele
@@ -35,10 +36,11 @@ export class Personagem {
     private readonly mundo: RAPIER.World,
   ) {}
 
-  static async criar(cena: Scene, mundo: RAPIER.World): Promise<Personagem> {
-    const [modelo, animacoes] = await Promise.all([obterModelo('homem'), obterAnimacoes('homem')]);
+  /** `id`: quem foi escolhido no menu (ver PERSONAGENS em assets.ts). */
+  static async criar(cena: Scene, mundo: RAPIER.World, id: IdPersonagem): Promise<Personagem> {
+    const [modelo, animacoes] = await Promise.all([obterModelo(id), obterAnimacoes(id)]);
     cena.add(modelo);
-    return new Personagem(new PersonagemFisico(mundo), new PersonagemVisual(modelo, animacoes), mundo);
+    return new Personagem(new PersonagemFisico(mundo), new PersonagemVisual(modelo, animacoes, PERSONAGENS[id].animacoes), mundo);
   }
 
   /** Centro do corpo (m), no passo de física atual: para medir distâncias. */

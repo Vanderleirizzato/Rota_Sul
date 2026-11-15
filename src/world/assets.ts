@@ -39,7 +39,7 @@ export interface InfoModelo {
   solido: boolean;
   /** Só para carros: onde estão as rodas no modelo. */
   rodas?: RodasDoModelo;
-  /** Só para carros: nome mostrado na garagem. */
+  /** Só para carros: nome do modelo (para quem ler o manifesto). */
   nome?: string;
   /** Só para carros: altura (m) do centro da placa traseira "ENZ-ADS". */
   alturaPlaca?: number;
@@ -138,11 +138,18 @@ export const MODELOS = {
   },
 
   // --------------------------------------------------------------- tráfego --
+  // Os que têm `rodas` também podem ser dirigidos: a pé, chegue perto e aperte E.
+  // (Ônibus e food truck vêm numa malha só, sem rodas separadas: só enfeitam.)
+  // Atenção: o carregador tira os pontos dos nomes ("Cube.013" vira "Cube013").
   onibus: { arquivo: `${M}cars/Bus by Poly by Google - 4CPpvEmrMoF.glb`, medida: 'comprimento', metros: 12, rotacaoY: 0, solido: true },
-  taxi: { arquivo: `${M}cars/Taxi by Quaternius - x43lOScTpN.glb`, medida: 'comprimento', metros: 4.5, rotacaoY: 0, solido: true },
-  caminhao: { arquivo: `${M}cars/Truck by Quaternius - cXw6oiFtZ8.glb`, medida: 'comprimento', metros: 7, rotacaoY: 0, solido: true },
-  viatura: { arquivo: `${M}cars/Police Car by Kay Lousberg - Uj7i2vlmir.glb`, medida: 'comprimento', metros: 4.7, rotacaoY: 0, solido: true },
-  esportivo: { arquivo: `${M}cars/Sports Car by Quaternius - Gzj704DXdr.glb`, medida: 'comprimento', metros: 4.4, rotacaoY: 0, solido: true },
+  taxi: { arquivo: `${M}cars/Taxi by Quaternius - x43lOScTpN.glb`, medida: 'comprimento', metros: 4.5, rotacaoY: 0, solido: true,
+    rodas: { dianteiraEsquerda: 'Taxi_FrontLeftWheel_Cube013', dianteiraDireita: 'Taxi_FrontRightWheel_Cube014', traseiraEsquerda: 'Taxi_BackWheels_Cube010', traseiraDireita: 'Taxi_BackWheels_Cube010' } },
+  caminhao: { arquivo: `${M}cars/Truck by Quaternius - cXw6oiFtZ8.glb`, medida: 'comprimento', metros: 7, rotacaoY: 0, solido: true,
+    rodas: { dianteiraEsquerda: 'FrontWheel_L', dianteiraDireita: 'FrontWheel_R', traseiraEsquerda: 'BackWheels', traseiraDireita: 'BackWheels' } },
+  viatura: { arquivo: `${M}cars/Police Car by Kay Lousberg - Uj7i2vlmir.glb`, medida: 'comprimento', metros: 4.7, rotacaoY: 0, solido: true,
+    rodas: { dianteiraEsquerda: 'car_police_wheel_front_left', dianteiraDireita: 'car_police_wheel_front_right', traseiraEsquerda: 'car_police_wheel_rear_left', traseiraDireita: 'car_police_wheel_rear_right' } },
+  esportivo: { arquivo: `${M}cars/Sports Car by Quaternius - Gzj704DXdr.glb`, medida: 'comprimento', metros: 4.4, rotacaoY: 0, solido: true,
+    rodas: { dianteiraEsquerda: 'FrontWheel_L', dianteiraDireita: 'FrontWheel_R', traseiraEsquerda: 'BackWheels', traseiraDireita: 'BackWheels' } },
   moto: { arquivo: `${M}cars/Motorcycle by Poly by Google - 5_MTCnqfUTr.glb`, medida: 'comprimento', metros: 2.2, rotacaoY: -90, solido: true,
     piloto: { modelo: 'homem', animacao: 'Man_Sitting', posicao: [0, -0.05, -0.25] } },
   vespa: { arquivo: `${M}cars/Vespa by Jasmine Roberts - blGLclvvdEM.glb`, medida: 'comprimento', metros: 1.8, rotacaoY: 0, solido: true,
@@ -226,5 +233,37 @@ export const MODELOS = {
 
 export type IdModelo = keyof typeof MODELOS;
 export type IdCarro = 'carro1' | 'carro2' | 'carro3';
-/** Os carros do jogador, na ordem da garagem e das vagas do estacionamento. */
+/** Os carros do jogador, na ordem das vagas do estacionamento (carro1, carro2, carro3). */
 export const IDS_CARROS: readonly IdCarro[] = ['carro1', 'carro2', 'carro3'];
+
+// ------------------------------------------------------------ personagens --
+// Quem o jogador escolhe no menu para andar a pé. Cada arquivo dá um nome
+// diferente para as mesmas animações, então guardamos o nome de cada uma.
+// Precisa ter parado, andando e correndo. O pulo é opcional: quem não tem
+// (os modelos de 24 animações da Quaternius) usa a corrida no ar.
+// Os nomes próprios são só sugestão: troque à vontade.
+
+/** O nome de cada animação no arquivo (a parte depois do "|": "HumanArmature|Man_Walk" → "Man_Walk"). */
+export interface AnimacoesAPe {
+  parado: string;
+  andando: string;
+  correndo: string;
+  /** Opcional: sem ele, no ar o personagem usa a animação de correr. */
+  pulando?: string;
+}
+
+export type IdPersonagem = 'homem' | 'mulher' | 'moletom' | 'mulher2' | 'aventureiro' | 'aventureira';
+/** Na ordem em que aparecem no menu. */
+export const IDS_PERSONAGENS: readonly IdPersonagem[] = ['homem', 'mulher', 'moletom', 'mulher2', 'aventureiro', 'aventureira'];
+
+/** Os nomes das animações nos modelos de 24 animações da Quaternius (todos iguais). */
+const ANIMACOES_QUATERNIUS_24: AnimacoesAPe = { parado: 'Idle', andando: 'Walk', correndo: 'Run' };
+
+export const PERSONAGENS: Record<IdPersonagem, { nome: string; animacoes: AnimacoesAPe }> = {
+  homem: { nome: 'Rafael', animacoes: { parado: 'Man_Idle', andando: 'Man_Walk', correndo: 'Man_Run', pulando: 'Man_Jump' } },
+  mulher: { nome: 'Júlia', animacoes: { parado: 'Idle', andando: 'Walking', correndo: 'Running', pulando: 'Jump' } },
+  moletom: { nome: 'Davi', animacoes: ANIMACOES_QUATERNIUS_24 },
+  mulher2: { nome: 'Camila', animacoes: ANIMACOES_QUATERNIUS_24 },
+  aventureiro: { nome: 'Tiago', animacoes: ANIMACOES_QUATERNIUS_24 },
+  aventureira: { nome: 'Lara', animacoes: ANIMACOES_QUATERNIUS_24 },
+};

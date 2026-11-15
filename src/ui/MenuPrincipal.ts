@@ -6,18 +6,20 @@ import { lerEscolhas, salvarEscolhas, type Escolhas } from '../core/Escolhas';
 import { irParaFase, type EstadoMenu } from '../core/Estados';
 import { formatarTempo } from '../core/Corrida';
 import { lerRecorde } from '../core/Recordes';
-import { Garagem } from '../graphics/Garagem';
-import { IDS_CARROS as CARROS, MODELOS } from '../world/assets';
-import { FASES, FASE_INICIAL } from '../world/levels';
+import { Vitrine } from '../graphics/Vitrine';
+import { IDS_PERSONAGENS as PERSONAGENS_MENU, PERSONAGENS } from '../world/assets';
+import { FASES, FASE_INICIAL, type IdFase } from '../world/levels';
 import { ORDEM_FASES, faseEstaLiberada } from '../core/Progresso';
 
 // =============================================================================
 // MENU PRINCIPAL
 // =============================================================================
-// Três telas, todas por cima da garagem 3D (ver Estados.ts):
-//  - menu:          Jogar, qualidade e créditos, e o andamento da viagem;
-//  - selecaoCarro:  a garagem, escolhendo o carro com ◀ ▶;
-//  - creditos:      a tabela do CREDITOS.md.
+// Três telas, todas por cima da vitrine 3D (ver Estados.ts):
+//  - menu:               Jogar, qualidade e créditos, e o andamento da viagem;
+//  - selecaoPersonagem:  a vitrine, escolhendo o personagem com ◀ ▶;
+//  - creditos:           a tabela do CREDITOS.md.
+// O carro não se escolhe aqui: os três ficam estacionados no jogo, e o
+// jogador anda até o que quiser.
 //
 // Funciona com teclado (setas, Enter, Esc), mouse e controle de videogame.
 // O HTML é refeito do zero a cada mudança (desenhar()): para um menu tão
@@ -25,20 +27,22 @@ import { ORDEM_FASES, faseEstaLiberada } from '../core/Progresso';
 // =============================================================================
 
 const NIVEIS: readonly NivelQualidade[] = ['baixo', 'medio', 'alto'];
-const OPCOES = ['jogar', 'qualidade', 'creditos'] as const;
+const OPCOES = ['jogar', 'cidade', 'qualidade', 'creditos'] as const;
 type Opcao = (typeof OPCOES)[number];
 
 export class MenuPrincipal {
   private readonly entrada = new Entrada();
-  private readonly garagem: Garagem;
+  private readonly vitrine: Vitrine;
   private readonly raiz: HTMLDivElement;
   private estado: EstadoMenu = 'menu';
   private escolhas: Escolhas = lerEscolhas();
   private opcao: Opcao = 'jogar';
+  /** Em que cidade começar: só as liberadas (a viagem normal começa em Foz). */
+  private fase: IdFase = FASE_INICIAL;
   private ultimoTempo = performance.now();
 
   private constructor() {
-    this.garagem = new Garagem(this.escolhas.qualidade);
+    this.vitrine = new Vitrine(this.escolhas.qualidade);
     this.raiz = document.createElement('div');
     this.raiz.className = 'menu';
     document.body.appendChild(this.raiz);
@@ -52,8 +56,8 @@ export class MenuPrincipal {
 
   static async criar(): Promise<MenuPrincipal> {
     const menu = new MenuPrincipal();
-    // Só espera o carro escolhido; os outros chegam enquanto o jogador lê o menu.
-    await menu.garagem.carregar(CARROS, menu.escolhas.carro);
+    // Só espera o personagem escolhido; os outros chegam enquanto o jogador lê o menu.
+    await menu.vitrine.carregar(PERSONAGENS_MENU, menu.escolhas.personagem);
     menu.desenhar();
     return menu;
   }
@@ -64,7 +68,7 @@ export class MenuPrincipal {
       this.ultimoTempo = agora;
       this.entrada.comecoDoQuadro();
       this.lerTeclas();
-      this.garagem.atualizar(dt);
+      this.vitrine.atualizar(dt);
       this.entrada.fimDoQuadro();
       requestAnimationFrame(quadro);
     };
@@ -81,9 +85,9 @@ export class MenuPrincipal {
       if (e.apertou('esquerda')) this.mudarValor(-1);
       if (e.apertou('direita')) this.mudarValor(1);
       if (e.apertou('confirmar')) this.executar(this.opcao);
-    } else if (this.estado === 'selecaoCarro') {
-      if (e.apertou('esquerda')) this.executar('carro-anterior');
-      if (e.apertou('direita')) this.executar('carro-proximo');
+    } else if (this.estado === 'selecaoPersonagem') {
+      if (e.apertou('esquerda')) this.executar('personagem-anterior');
+      if (e.apertou('direita')) this.executar('personagem-proximo');
       if (e.apertou('confirmar')) this.executar('correr');
       if (e.apertou('voltar')) this.executar('voltar');
     } else {
@@ -99,11 +103,19 @@ export class MenuPrincipal {
   private executar(acao: string): void {
     switch (acao) {
       case 'jogar':
-        this.irPara('selecaoCarro');
+        this.irPara('selecaoPersonagem');
         break;
       case 'qualidade':
         this.opcao = acao;
         this.mudarValor(1);
+        break;
+      case 'cidade':
+        this.opcao = acao;
+        this.mudarValor(1);
+        break;
+      case 'cidade-anterior':
+        this.opcao = 'cidade';
+        this.mudarValor(-1);
         break;
       case 'qualidade-anterior':
         this.opcao = 'qualidade';
@@ -112,18 +124,19 @@ export class MenuPrincipal {
       case 'creditos':
         this.irPara('creditos');
         break;
-      case 'carro-anterior':
-      case 'carro-proximo': {
-        const i = CARROS.indexOf(this.escolhas.carro) + (acao === 'carro-proximo' ? 1 : -1);
-        this.escolher({ carro: CARROS[(i + CARROS.length) % CARROS.length] });
-        this.garagem.mostrar(this.escolhas.carro);
+      case 'personagem-anterior':
+      case 'personagem-proximo': {
+        const lista = PERSONAGENS_MENU;
+        const i = lista.indexOf(this.escolhas.personagem) + (acao === 'personagem-proximo' ? 1 : -1);
+        this.escolher({ personagem: lista[(i + lista.length) % lista.length] });
+        this.vitrine.mostrar(this.escolhas.personagem);
         break;
       }
       case 'correr':
         this.raiz.innerHTML = '<div class="menu-carregando">Carregando a fase…</div>';
-        // A viagem começa sempre em Foz; as outras fases se alcançam dirigindo
-        // (marcador "seguir viagem", depois de bater o tempo-meta).
-        irParaFase(FASE_INICIAL);
+        // A cidade escolhida no menu (só as liberadas aparecem lá). Normalmente
+        // é Foz; as outras se alcançam dirigindo (marcador "seguir viagem").
+        irParaFase(this.fase);
         break;
       case 'voltar':
         this.irPara('menu');
@@ -133,7 +146,7 @@ export class MenuPrincipal {
 
   private irPara(estado: EstadoMenu): void {
     this.estado = estado;
-    this.garagem.carroADireita(estado === 'menu');
+    this.vitrine.aDireita(estado === 'menu');
     this.desenhar();
   }
 
@@ -143,8 +156,14 @@ export class MenuPrincipal {
     this.desenhar();
   }
 
-  /** ◀ ▶ na linha de qualidade: passa para a anterior/próxima. */
+  /** ◀ ▶ nas linhas de cidade e de qualidade: passa para a anterior/próxima. */
   private mudarValor(passo: number): void {
+    if (this.opcao === 'cidade') {
+      const liberadas = ORDEM_FASES.filter(faseEstaLiberada);
+      const i = liberadas.indexOf(this.fase) + passo;
+      this.fase = liberadas[(i + liberadas.length) % liberadas.length];
+      this.desenhar();
+    }
     if (this.opcao === 'qualidade') {
       const i = NIVEIS.indexOf(this.escolhas.qualidade) + passo;
       this.escolher({ qualidade: NIVEIS[(i + NIVEIS.length) % NIVEIS.length] });
@@ -161,7 +180,7 @@ export class MenuPrincipal {
 
   private desenhar(): void {
     if (this.estado === 'menu') this.raiz.innerHTML = this.htmlMenu();
-    else if (this.estado === 'selecaoCarro') this.raiz.innerHTML = this.htmlGaragem();
+    else if (this.estado === 'selecaoPersonagem') this.raiz.innerHTML = this.htmlEscolha();
     else this.raiz.innerHTML = this.htmlCreditos();
   }
 
@@ -181,23 +200,26 @@ export class MenuPrincipal {
         <div class="menu-subtitulo">Foz do Iguaçu → Navegantes</div>
         ${linha('jogar', '<span class="menu-jogar">JOGAR</span>')}
         ${htmlViagem()}
+        ${seletor('cidade', 'Cidade', FASES[this.fase].nome, FASES[this.fase].local)}
         ${seletor('qualidade', 'Qualidade', QUALIDADES[this.escolhas.qualidade].nome, 'Baixo: notebook com vídeo integrado')}
         ${linha('creditos', 'Créditos')}
         <div class="menu-dica"><kbd>↑</kbd><kbd>↓</kbd> escolher · <kbd>←</kbd><kbd>→</kbd> mudar · <kbd>Enter</kbd> confirmar · 🎮 também funciona</div>
       </div>`;
   }
 
-  private htmlGaragem(): string {
-    const nome = MODELOS[this.escolhas.carro].nome;
-    const numero = CARROS.indexOf(this.escolhas.carro) + 1;
+  private htmlEscolha(): string {
+    const lista = PERSONAGENS_MENU;
+    const nome = PERSONAGENS[this.escolhas.personagem].nome;
+    const numero = lista.indexOf(this.escolhas.personagem) + 1;
     return `
-      <div class="menu-garagem">
-        <div class="menu-garagem-topo">GARAGEM</div>
-        <div class="menu-garagem-carro">
-          <b class="menu-seta" data-acao="carro-anterior">◀</b>
-          <div><div class="menu-garagem-numero">CARRO ${numero} DE ${CARROS.length}</div><div class="menu-garagem-nome">${nome}</div></div>
-          <b class="menu-seta" data-acao="carro-proximo">▶</b>
+      <div class="menu-escolha">
+        <div class="menu-escolha-topo">QUEM VAI VIAJAR?</div>
+        <div class="menu-escolha-item">
+          <b class="menu-seta" data-acao="personagem-anterior">◀</b>
+          <div><div class="menu-escolha-numero">PERSONAGEM ${numero} DE ${lista.length}</div><div class="menu-escolha-nome">${nome}</div></div>
+          <b class="menu-seta" data-acao="personagem-proximo">▶</b>
         </div>
+        <div class="menu-escolha-dica">Os seus 3 carros estão estacionados no jogo: ande até um e aperte <kbd>E</kbd>.</div>
         <div class="menu-botoes">
           <button data-acao="voltar">Voltar <kbd>Esc</kbd></button>
           <button class="principal" data-acao="correr">Correr! <kbd>Enter</kbd></button>

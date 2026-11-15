@@ -124,7 +124,15 @@ export function proximaFase(id: IdFase): IdFase | null {
   return i >= 0 && i + 1 < ORDEM_FASES.length ? ORDEM_FASES[i + 1] : null;
 }
 
+/**
+ * FASE DE TESTE: com `true`, todas as cidades ficam liberadas (e dá para
+ * escolher a cidade no menu), sem precisar bater o tempo-meta. Quando o jogo
+ * estiver pronto, volte para `false`: aí a viagem se libera dirigindo.
+ */
+export const TODAS_LIBERADAS_PARA_TESTE = true;
+
 /** A fase está liberada? (A primeira da viagem sempre está.) */
 export function faseEstaLiberada(id: IdFase): boolean {
+  if (TODAS_LIBERADAS_PARA_TESTE) return true;
   return faseLiberada(FASES[id].id, id === ORDEM_FASES[0]);
 }

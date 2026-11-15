@@ -1,9 +1,9 @@
-import { Quaternion, Vector3, type Scene } from 'three';
+import { MathUtils, Quaternion, Vector3, type Scene } from 'three';
 import type { MundoFisico } from '../physics/MundoFisico';
 import { BIOMAS } from './biomas';
 import type { Cenario, EstadoCarro } from './Cenario';
 import { construirPista } from './ConstrutorPista';
-import type { DadosEstacionamento, DadosFase, PontoTracado } from './levels/TiposFase';
+import type { DadosFase, LugarFase, PontoTracado } from './levels/TiposFase';
 import { barreirasNasPontas, colocarObjetos } from './ObjetosFase';
 import { Plateia } from './Plateia';
 import { Andarilhos } from './Andarilhos';
@@ -31,8 +31,6 @@ import { tuning } from '../config/tuning';
 const RECUO_LARGADA = 6;
 /** Altura (m) acima do asfalto em que o carro aparece: ele "cai" de leve e assenta. */
 const ALTURA_NASCER = 1;
-/** O personagem começa este tanto (m) atrás dos carros estacionados, de frente para eles. */
-const ATRAS_DOS_CARROS = 7;
 
 /**
  * Monta uma fase a partir dos dados: traçado → pista → terreno → rio/mar →
@@ -59,15 +57,19 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   if (dados.portico) colocarPortico(cena, fisica, tracado, dados.portico);
   const insetos = dados.insetos ? new Insetos(cena, tracado, terreno, dados.insetos) : null;
   const trofeu = dados.trofeu ? new Trofeu(cena, tracado, terreno, dados.trofeu) : null;
+  // Os carros do jogador e o começo a pé: medidos agora, porque o bairro
+  // precisa deixar essas vagas livres.
+  const vagas = dados.estacionamento.vagas.map((v) => lugarNoChao(tracado, terreno, v, ALTURA_NASCER));
+  const inicioAPe = lugarNoChao(tracado, terreno, dados.estacionamento.inicioAPe, 0);
   const pecas = new Pecas(cena, tracado, terreno, dados.id, dados.pecas ?? []);
 
   // Tudo que depende de baixar arquivos .glb roda em paralelo.
-  const [vegetacao, , postes, , bloqueios] = await Promise.all([
+  const [vegetacao, , postes, carrosBairro, bloqueios] = await Promise.all([
     // Abaixo da água (rio ou mar) nada nasce.
     plantarVegetacao(cena, fisica, tracado, terreno, BIOMAS[dados.bioma], dados.rio?.nivel ?? dados.mar?.nivel),
     colocarObjetos(cena, fisica, tracado, terreno, dados.objetos),
     colocarFileiras(cena, fisica, tracado, terreno, dados.fileiras ?? []),
-    colocarBairros(cena, fisica, tracado, terreno, bairros),
+    colocarBairros(cena, fisica, tracado, terreno, bairros, vagas.map((v) => v.posicao)),
     // Fim da estrada: "pista interditada" nas duas pontas.
     Bloqueios.criar(cena, fisica, tracado),
     barreirasNasPontas(cena, tracado, 'barreiraConcreto'),
@@ -89,10 +91,15 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     nome: dados.nome,
     local: dados.local,
     largada: { posicao: tracado.pontos[i].clone().add(new Vector3(0, ALTURA_NASCER, 0)), angulo: tracado.anguloEm(i) },
-    vagas: vagasDoEstacionamento(tracado, dados.estacionamento),
-    inicioAPe: {
-      posicao: tracado.pontoAoLado(dados.estacionamento.distancia - ATRAS_DOS_CARROS, 'centro', 0),
-      angulo: tracado.anguloEm(tracado.indiceEm(dados.estacionamento.distancia)),
+    vagas,
+    inicioAPe,
+    // Do trânsito ou estacionado num bairro: vale o que estiver mais perto.
+    carroDisponivel(p, raio) {
+      const doTransito = trafego?.disponivel(p, raio) ?? null;
+      const doBairro = carrosBairro.disponivel(p, raio);
+      if (!doTransito) return doBairro;
+      if (!doBairro) return doTransito;
+      return doTransito.distancia < doBairro.distancia ? doTransito : doBairro;
     },
     tracado,
     chegada: dados.chegada,
@@ -152,15 +159,16 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
 }
 
 /**
- * As três vagas lado a lado, de frente para a largada: carro1 à esquerda,
- * carro2 no meio e carro3 à direita.
+ * Um lugar dos dados (distância, lado, afastamento, rotação) no mundo: a
+ * posição no chão (mais `acima` metros) e o ângulo.
  */
-function vagasDoEstacionamento(tracado: Tracado, e: DadosEstacionamento): Cenario['vagas'] {
-  const angulo = tracado.anguloEm(tracado.indiceEm(e.distancia));
-  return [1, 0, -1].map((lado) => ({
-    posicao: tracado.pontoAoLado(e.distancia, 'esquerda', lado * e.espacamento).add(new Vector3(0, ALTURA_NASCER, 0)),
-    angulo,
-  }));
+function lugarNoChao(tracado: Tracado, terreno: Terreno, l: LugarFase, acima: number): { posicao: Vector3; angulo: number } {
+  const posicao = tracado.pontoAoLado(l.distancia, l.lado, l.afastamento);
+  // Na pista vale a altura do asfalto (o terreno fica um pouco abaixo dele).
+  const naPista = l.afastamento <= tracado.meiaLarguraTotal;
+  const i = tracado.indiceEm(l.distancia);
+  posicao.y = (naPista ? tracado.alturaSuperficie(i, 0) : terreno.alturaEm(posicao.x, posicao.z)) + acima;
+  return { posicao, angulo: tracado.anguloEm(i) + MathUtils.degToRad(l.rotacao ?? 0) };
 }
 
 /** Distância (m) entre o bloqueio no fim da estrada e a parede invisível da borda do mundo. */

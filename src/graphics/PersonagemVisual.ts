@@ -1,7 +1,8 @@
+import type { AnimacoesAPe } from '../world/assets';
 import { AnimationMixer, LoopOnce, type AnimationAction, type AnimationClip, type Object3D } from 'three';
 
 // =============================================================================
-// O DESENHO DO PERSONAGEM: modelo do homem (Quaternius) e suas animações
+// O DESENHO DO PERSONAGEM: o modelo escolhido no menu e suas animações
 // =============================================================================
 // O AnimationMixer é o "tocador" de animações do three.js. Cada animação vira
 // uma "ação" com um PESO de 0 a 1. Em vez de trocar de uma animação para a
@@ -10,15 +11,8 @@ import { AnimationMixer, LoopOnce, type AnimationAction, type AnimationClip, typ
 // se misturam suavemente.
 // =============================================================================
 
-export type PoseAPe = 'parado' | 'andando' | 'correndo' | 'pulando';
+export type PoseAPe = keyof AnimacoesAPe;
 
-/** Nome de cada pose no arquivo do homem ("HumanArmature|Man_Walk", etc.). */
-const ANIMACAO: Record<PoseAPe, string> = {
-  parado: 'Man_Idle',
-  andando: 'Man_Walk',
-  correndo: 'Man_Run',
-  pulando: 'Man_Jump',
-};
 
 /** Rapidez (por segundo) com que uma pose dá lugar à outra. 8 ≈ um oitavo de segundo. */
 const RAPIDEZ_MISTURA = 8;
@@ -37,12 +31,16 @@ export class PersonagemVisual {
   constructor(
     readonly objeto: Object3D,
     animacoes: AnimationClip[],
+    /** O nome de cada pose no arquivo deste personagem (ver PERSONAGENS em assets.ts). */
+    nomes: AnimacoesAPe,
   ) {
     this.mixer = new AnimationMixer(objeto);
-    for (const pose of Object.keys(ANIMACAO) as PoseAPe[]) {
-      const clipe = animacoes.find((a) => a.name.endsWith(ANIMACAO[pose]));
+    for (const pose of Object.keys(nomes) as PoseAPe[]) {
+      // Nome exato depois do "|": "Idle" não pode pegar "SitIdle" por engano.
+      const nome = nomes[pose];
+      const clipe = animacoes.find((a) => a.name.split('|').pop() === nome);
       if (!clipe) {
-        console.warn(`Personagem: animação ${ANIMACAO[pose]} não encontrada no modelo.`);
+        console.warn(`Personagem: animação ${nome} não encontrada no modelo.`);
         continue;
       }
       const acao = this.mixer.clipAction(clipe);
@@ -67,6 +65,8 @@ export class PersonagemVisual {
    * `rapidez` = velocidade horizontal real (m/s), que acerta o ritmo dos passos.
    */
   atualizar(dt: number, pe: { x: number; y: number; z: number }, angulo: number, pose: PoseAPe, rapidez: number): void {
+    // Sem animação de pulo (alguns modelos não têm): no ar, ele "corre".
+    if (!this.acoes.has(pose)) pose = 'correndo';
     this.objeto.position.set(pe.x, pe.y, pe.z);
     this.objeto.rotation.y = angulo;
 

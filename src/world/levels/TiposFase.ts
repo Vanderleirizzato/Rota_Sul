@@ -174,19 +174,27 @@ export interface DadosRio {
   cachoeira: { distancia: number; lado: Lado; altura: number };
 }
 
+/** Um lugar fora da pista, medido a partir dela (como os objetos da fase). */
+export interface LugarFase {
+  /** Distância (m) ao longo da estrada (negativa = antes do primeiro ponto). */
+  distancia: number;
+  lado: Lado;
+  /** Metros do centro da estrada até o lugar. */
+  afastamento: number;
+  /** Giro (graus) além da direção da estrada: 90 = atravessado, 180 = virado para trás. */
+  rotacao?: number;
+}
+
 /**
- * Onde os três carros do jogador ficam estacionados quando a fase começa (lado
- * a lado, de frente para a largada). O jogador começa a pé, logo atrás, e
- * escolhe em qual entrar.
+ * Onde o jogador começa e onde estão os 3 carros dele. Os carros ficam
+ * estacionados em lugares diferentes (no meio-fio de um bairro, num
+ * gramado...), e o jogador anda a pé para achá-los e escolher um.
  */
 export interface DadosEstacionamento {
-  /**
-   * Distância (m) desde o início da pista. Deixe antes de `trafego.inicio`:
-   * senão o trânsito passa por cima dos carros parados.
-   */
-  distancia: number;
-  /** Espaço (m) entre o centro de um carro e o do vizinho. Menos de 3: as portas se encostam. */
-  espacamento: number;
+  /** Onde o personagem aparece no começo da fase. */
+  inicioAPe: LugarFase;
+  /** Vagas de carro1, carro2 e carro3. Fora da pista: o trânsito passaria por cima. */
+  vagas: [LugarFase, LugarFase, LugarFase];
 }
 
 /** Grupo de pessoas assistindo, atrás de uma fila de barreiras. */

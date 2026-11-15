@@ -12,10 +12,12 @@ import {
 } from 'three';
 import type { MundoFisico } from '../physics/MundoFisico';
 import { texturaAsfalto, texturaDetalheChao } from '../graphics/Texturas';
-import { MODELOS, type IdModelo } from './assets';
+import { MODELOS, type IdModelo, type InfoModelo } from './assets';
 import { obterModelo } from './CarregadorModelos';
 import { criarLampadas } from './Fileiras';
-import { criarArvoreLeve, criarInstancias } from './Instancias';
+import { criarArvoreLeve, criarInstancias, type LugarInstancia } from './Instancias';
+import type { CarroDisponivel } from './Cenario';
+import type RAPIER from '@dimforge/rapier3d-compat';
 import type { DadosBairro, DadosPatio } from './levels/TiposFase';
 import { criarSorteio } from './Ruido';
 import type { Terreno } from './Terreno';
@@ -68,6 +70,62 @@ const ALTURA_ARVORE: [number, number] = [5, 9];
 const COR_LOTE = 0x5f7d3c;
 const COR_COPA = 0x3f7a32;
 const COR_TRONCO = 0x6b4a2b;
+/** Nenhum carro sorteado estaciona a menos disto (m) de uma vaga reservada (os carros do jogador). */
+const LONGE_DAS_RESERVADAS = 7;
+const SUMIR = new Matrix4().makeScale(0, 0, 0);
+
+/** Um carro estacionado num bairro: dá para pegar e dirigir (se o modelo tiver rodas). */
+interface Estacionado {
+  modelo: IdModelo;
+  posicao: Vector3;
+  angulo: number;
+  colisor: RAPIER.Collider;
+  /** Qual cópia (na lista de matrizes do modelo) é ele: para escondê-lo quando for pego. */
+  copia: number;
+  lugares: LugarInstancia[];
+  pego: boolean;
+}
+
+/**
+ * Os carros estacionados de todos os bairros. Eles são cópias de um
+ * InstancedMesh (baratos de desenhar), com um colisor fixo. Quando o jogador
+ * pega um, a cópia some, o colisor sai, e o Jogo põe um carro de verdade
+ * (com rodas e suspensão) exatamente no lugar.
+ */
+export class CarrosDoBairro {
+  constructor(
+    private readonly fisica: MundoFisico,
+    private readonly lista: Estacionado[],
+  ) {}
+
+  disponivel(p: Vector3, raio: number): CarroDisponivel | null {
+    let melhor: Estacionado | null = null;
+    let menor = raio;
+    for (const e of this.lista) {
+      const info: InfoModelo = MODELOS[e.modelo];
+      if (e.pego || !info.rodas) continue;
+      // Do meio do carro até a lataria: uns 2 m.
+      const d = Math.max(0, e.posicao.distanceTo(p) - 2);
+      if (d <= menor) {
+        menor = d;
+        melhor = e;
+      }
+    }
+    if (!melhor) return null;
+    const e = melhor;
+    return { modelo: e.modelo, posicao: e.posicao.clone(), angulo: e.angulo, distancia: menor, pegar: () => this.pegar(e) };
+  }
+
+  private pegar(e: Estacionado): void {
+    if (e.pego) return;
+    e.pego = true;
+    this.fisica.removerColisor(e.colisor);
+    for (const { malha, indice } of e.lugares) {
+      malha.setMatrixAt(indice, SUMIR);
+      malha.instanceMatrix.needsUpdate = true;
+    }
+  }
+}
 
 /** Distância entre duas ruas iguais (uma quadra + uma rua). */
 function passo(b: DadosBairro): number {
@@ -196,8 +254,11 @@ export async function colocarBairros(
   tracado: Tracado,
   terreno: Terreno,
   bairros: readonly DadosBairro[],
-): Promise<void> {
-  if (bairros.length === 0) return;
+  /** Vagas que ficam livres (onde estão os carros do jogador). */
+  reservadas: readonly Vector3[] = [],
+): Promise<CarrosDoBairro> {
+  const estacionados: Estacionado[] = [];
+  if (bairros.length === 0) return new CarrosDoBairro(fisica, estacionados);
   const ids = [...new Set<IdModelo>([...bairros.flatMap((b) => [...b.construcoes.flat(), ...b.modelosCarros]), 'posteLampiao'])];
   const modelos = new Map(await Promise.all(ids.map(async (id) => [id, await obterModelo(id)] as const)));
   const medidas = new Map(ids.map((id) => [id, new Box3().setFromObject(modelos.get(id)!).getSize(new Vector3())]));
@@ -219,12 +280,12 @@ export async function colocarBairros(
     const p = passo(b);
 
     /** Coloca uma cópia de um modelo, com colisor de caixa. */
-    const colocar = (id: IdModelo, s: number, a: number, frente: Vector3, escala = 1): void => {
+    const colocar = (id: IdModelo, s: number, a: number, frente: Vector3, escala = 1): RAPIER.Collider => {
       const base = grade.ponto(s, a);
       const giro = giroPara(frente);
       matrizes.get(id)!.push(new Matrix4().compose(base, giro, new Vector3(escala, escala, escala)));
       const t = medidas.get(id)!.clone().multiplyScalar(escala);
-      fisica.criarCaixaFixa({ x: base.x, y: base.y + t.y / 2, z: base.z }, t.x / 2, t.y / 2, t.z / 2, giro);
+      return fisica.criarCaixaFixa({ x: base.x, y: base.y + t.y / 2, z: base.z }, t.x / 2, t.y / 2, t.z / 2, giro);
     };
 
     // --- ruas -----------------------------------------------------------------
@@ -279,7 +340,11 @@ export async function colocarBairros(
     const meioFio = b.rua / 2 - DO_MEIO_FIO;
     const estacionar = (s: number, a: number, frente: Vector3): void => {
       if (sorteio() >= chance) return;
-      colocar(b.modelosCarros[Math.floor(sorteio() * b.modelosCarros.length)], s, a, frente);
+      const id = b.modelosCarros[Math.floor(sorteio() * b.modelosCarros.length)];
+      const posicao = grade.ponto(s, a);
+      if (reservadas.some((r) => Math.hypot(r.x - posicao.x, r.z - posicao.z) < LONGE_DAS_RESERVADAS)) return;
+      const colisor = colocar(id, s, a, frente);
+      estacionados.push({ modelo: id, posicao, angulo: Math.atan2(frente.x, frente.z), colisor, copia: matrizes.get(id)!.length - 1, lugares: [], pego: false });
     };
     for (let i = 0; i <= k; i++) {
       // Nas transversais: dos dois lados, ao longo de cada quadra.
@@ -339,7 +404,12 @@ export async function colocarBairros(
     }
   });
 
-  for (const [id, lista] of matrizes) criarInstancias(cena, modelos.get(id)!, lista);
+  for (const [id, lista] of matrizes) {
+    const onde: LugarInstancia[][] = [];
+    criarInstancias(cena, modelos.get(id)!, lista, true, onde);
+    for (const e of estacionados) if (e.modelo === id) e.lugares = onde[e.copia];
+  }
   criarInstancias(cena, criarArvoreLeve(COR_COPA, COR_TRONCO), arvores);
   if (lampadas.length > 0) cena.add(criarLampadas(lampadas));
+  return new CarrosDoBairro(fisica, estacionados);
 }

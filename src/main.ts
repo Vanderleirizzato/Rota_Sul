@@ -4,7 +4,7 @@ import { MenuPrincipal } from './ui/MenuPrincipal';
 import { BarraCarregamento } from './ui/BarraCarregamento';
 
 // Ponto de entrada. O endereço decide o que abre (ver core/Estados.ts):
-//  - sem nada          → menu principal (com a garagem);
+//  - sem nada          → menu principal (com a vitrine de personagens);
 //  - ?fase=fase1, ...  → a corrida dessa fase;
 //  - ?fase=teste       → a pista de teste de física (para desenvolvimento).
 async function principal(): Promise<void> {
@@ -12,7 +12,7 @@ async function principal(): Promise<void> {
   const barra = aviso ? new BarraCarregamento(aviso) : null;
   try {
     if (!new URLSearchParams(window.location.search).has('fase')) {
-      barra?.definirEtapa('Abrindo a garagem…');
+      barra?.definirEtapa('Abrindo o menu…');
       const menu = await MenuPrincipal.criar();
       barra?.remover();
       menu.iniciar();

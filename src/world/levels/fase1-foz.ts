@@ -63,9 +63,19 @@ export const FASE1_FOZ: DadosFase = {
   },
 
   largada: 90,
-  // Os 3 carros do jogador, lado a lado no fundo da área de largada (o
-  // trânsito só começa aos 25 m). O jogador começa a pé, logo atrás deles.
-  estacionamento: { distancia: 12, espacamento: 3.4 },
+  // O jogador começa a pé na calçada do bairro, ao lado da largada. Os 3
+  // carros dele estão estacionados em ruas diferentes do bairro: é preciso
+  // andar para achá-los. (Contas da grade do bairro: ruas transversais com
+  // centro em -235, -185, -135, -85, -35 m; rua paralela a 55 m do centro
+  // da estrada; o meio-fio fica 3,6 m para dentro do centro da rua.)
+  estacionamento: {
+    inicioAPe: { distancia: 5, lado: 'esquerda', afastamento: 8, rotacao: 180 },
+    vagas: [
+      { distancia: -131.4, lado: 'esquerda', afastamento: 31, rotacao: 90 }, // na rua do meio
+      { distancia: -60, lado: 'esquerda', afastamento: 51.4, rotacao: 180 }, // na rua paralela
+      { distancia: -38.6, lado: 'esquerda', afastamento: 81, rotacao: -90 }, // lá no fundo do bairro
+    ],
+  },
   chegada: 2930,
   bioma: 'mataAtlantica',
 

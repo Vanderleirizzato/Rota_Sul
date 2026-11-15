@@ -1,4 +1,4 @@
-/* Menu principal, garagem e créditos. As cores seguem o HUD:
+/* Menu principal, escolha do personagem e créditos. As cores seguem o HUD:
    azul-ciano (#33e1ff) para o que está escolhido e amarelo (#ffcc33) de destaque. */
 
 .menu {
@@ -64,8 +64,8 @@
 .menu-detalhe { display: block; font-size: 13px; opacity: 0.65; margin-top: 2px; }
 .menu-dica { margin-top: 26px; font-size: 13px; opacity: 0.7; line-height: 2; }
 
-/* --- Garagem: nome do carro embaixo, no meio --- */
-.menu-garagem {
+/* --- Escolha do personagem: nome embaixo, no meio --- */
+.menu-escolha {
   text-shadow: 0 2px 10px #000;
   position: absolute;
   left: 0;
@@ -73,10 +73,11 @@
   bottom: 6vh;
   text-align: center;
 }
-.menu-garagem-topo { position: fixed; top: 4vh; left: 0; right: 0; letter-spacing: 6px; opacity: 0.7; }
-.menu-garagem-carro { display: flex; align-items: center; justify-content: center; gap: 36px; }
-.menu-garagem-numero { font-size: 13px; letter-spacing: 4px; opacity: 0.6; }
-.menu-garagem-nome { font: 900 42px ui-monospace, Consolas, monospace; letter-spacing: 3px; min-width: 9em; }
+.menu-escolha-topo { position: fixed; top: 4vh; left: 0; right: 0; letter-spacing: 6px; opacity: 0.7; }
+.menu-escolha-item { display: flex; align-items: center; justify-content: center; gap: 36px; }
+.menu-escolha-numero { font-size: 13px; letter-spacing: 4px; opacity: 0.6; }
+.menu-escolha-dica { margin-top: 10px; font-size: 14px; opacity: 0.75; }
+.menu-escolha-nome { font: 900 42px ui-monospace, Consolas, monospace; letter-spacing: 3px; min-width: 9em; }
 .menu-seta { font-size: 40px; color: #33e1ff; cursor: pointer; padding: 0 12px; }
 .menu-seta:hover { color: #fff; }
 

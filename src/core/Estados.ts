@@ -4,15 +4,15 @@ import type { IdFase } from '../world/levels';
 // ESTADOS DO JOGO E COMO SE PASSA DE UM PARA OUTRO
 // =============================================================================
 //
-//   Menu ──► Seleção de Carro ──► Jogando ◄──► Pausa
-//    ▲  ▲                           │
-//    │  └──────── Fim de Fase ◄─────┘
+//   Menu ──► Seleção de Personagem ──► Jogando ◄──► Pausa
+//    ▲  ▲                                │
+//    │  └──────── Fim de Fase ◄──────────┘
 //    │               │
 //    └───────────────┴──► próxima fase (Jogando de novo)
 //
 // O jogo tem duas "telas" grandes, cada uma com o seu código:
-//  - a página do MENU (main.ts → MenuPrincipal): Menu, Seleção de Carro
-//    (a garagem) e Créditos;
+//  - a página do MENU (main.ts → MenuPrincipal): Menu, Seleção de
+//    Personagem (a vitrine) e Créditos;
 //  - a página da CORRIDA (main.ts → Jogo): Jogando, Pausa e Fim de Fase.
 //
 // Para ir de uma para a outra, recarregamos a página com outro endereço
@@ -24,14 +24,14 @@ import type { IdFase } from '../world/levels';
 // arquivos .glb vêm do cache do navegador, rápido.
 // =============================================================================
 
-export type EstadoMenu = 'menu' | 'selecaoCarro' | 'creditos';
+export type EstadoMenu = 'menu' | 'selecaoPersonagem' | 'creditos';
 export type EstadoCorrida = 'jogando' | 'pausa' | 'fimDeFase';
 
 export function irParaMenu(): void {
   window.location.href = window.location.pathname;
 }
 
-/** Abre a corrida da fase. O carro e a qualidade vêm das Escolhas salvas. */
+/** Abre a corrida da fase. O personagem e a qualidade vêm das Escolhas salvas. */
 export function irParaFase(fase: IdFase | 'teste'): void {
   window.location.href = `${window.location.pathname}?fase=${fase}`;
 }
