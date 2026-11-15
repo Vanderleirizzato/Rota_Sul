@@ -52,10 +52,16 @@ export interface InfoModelo {
   vaoLivre?: number;
   /** Cor que substitui o material original (para modelos cuja textura não veio junto). */
   corMaterial?: number;
+  /**
+   * Postes: onde fica a lâmpada (m), no modelo já no tamanho do jogo e olhando
+   * para +Z (a pista). Medido com o script de medição; ver fileiras "acesas".
+   */
+  lampada?: [x: number, y: number, z: number];
 }
 
 const M = 'models/';
 const PI = `${M}pessoas e Insetos/`;
+const C = `${M}city/`;
 
 export const MODELOS = {
   // ---------------------------------------------------------------- carros --
@@ -123,8 +129,19 @@ export const MODELOS = {
   // A ponte de treliça vem comprida em X; giramos para ficar em Z, como a pista.
   // A textura dela não veio junto com o .fbx (ficava preta): pintamos de aço.
   ponte: { arquivo: `${M}Bridge.fbx`, medida: 'comprimento', metros: 46, rotacaoY: 90, solido: false, corMaterial: 0x8b9299, observacao: 'O piso dela fica a ~50% da altura; a pista passa por cima.' },
-  posteRua: { arquivo: `${M}Street Light by Quaternius - nFwrlcLvM5.glb`, medida: 'altura', metros: 7, rotacaoY: 0, solido: true },
-  posteLampiao: { arquivo: `${M}Street Objects - Lamp Post by Ev Amitay - awUS2qoxeSa.glb`, medida: 'altura', metros: 4.5, rotacaoY: 0, solido: true },
+  // O braço do poste aponta para +Z: com rotação 0 a luz fica sobre a pista.
+  posteRua: { arquivo: `${M}Street Light by Quaternius - nFwrlcLvM5.glb`, medida: 'altura', metros: 7, rotacaoY: 0, solido: true, lampada: [0, 6.7, 1.05] },
+  posteLampiao: { arquivo: `${M}Street Objects - Lamp Post by Ev Amitay - awUS2qoxeSa.glb`, medida: 'altura', metros: 4.5, rotacaoY: 0, solido: true, lampada: [0, 4.05, -0.1] },
+
+  // ---------------------------------------------------------------- cidade --
+  // Prédios e casas da orla de Navegantes. Colisor: caixa simples (CLAUDE.md).
+  predioApartamentos: { arquivo: `${C}Apartment building by Poly by Google - 01lqee-dZAr.glb`, medida: 'altura', metros: 20, rotacaoY: 0, solido: true },
+  predioVermelho: { arquivo: `${C}Building Red by J-Toastie - lbNz2dClar.glb`, medida: 'altura', metros: 14, rotacaoY: 0, solido: true },
+  predioGrande: { arquivo: `${C}Large Building by Kenney - h7Jaq7bqMq.glb`, medida: 'altura', metros: 24, rotacaoY: 0, solido: true },
+  predioPequeno: { arquivo: `${C}Small Building by Kenney - QjL4Fo9dU9.glb`, medida: 'altura', metros: 9, rotacaoY: 0, solido: true },
+  casa: { arquivo: `${C}House by Poly by Google - 6PGyqELX8M-.glb`, medida: 'altura', metros: 6, rotacaoY: 0, solido: true },
+  casa2: { arquivo: `${C}House by Quaternius - vZ1CLbWmSx.glb`, medida: 'altura', metros: 7, rotacaoY: 0, solido: true },
+  bar: { arquivo: `${C}Bar by Poly by Google - cr_gfObT2-R.glb`, medida: 'altura', metros: 5, rotacaoY: 0, solido: true },
 
   // ------------------------------------------------------------------ porto --
   // Contêiner de 20 pés: 6,06 m. O verde é comprido em X; giramos para ficar em Z como o outro.
@@ -144,6 +161,9 @@ export const MODELOS = {
   senhor: { arquivo: `${PI}Old Guy by Polygonal Mind - imEy3Tqg80.glb`, medida: 'altura', metros: 1.7, rotacaoY: 0, solido: false, plateia: false, observacao: 'Sem animações e em pose de "T" (braços abertos): fora da plateia, pareceria defeito.' },
   // Peça única (as rodas não giram) e sem ciclista: fica parada nas paradas de descanso.
   bicicleta: { arquivo: `${PI}Bicycle by Poly by Google - b6USSQA731J.glb`, medida: 'comprimento', metros: 1.75, rotacaoY: 0, solido: true },
+  // Capivaras da orla de Navegantes, em grupos à beira da estrada. Sem animação:
+  // ficam paradas, pastando. Sólidas: o carro esbarra e para (como numa pedra).
+  capivara: { arquivo: `${PI}Capybara by Poly by Google - 66d-mKAgF17.glb`, medida: 'comprimento', metros: 1.25, rotacaoY: 0, solido: true },
   louvaDeus: { arquivo: `${PI}Praying Mantis by Lorenzo Cinalli - bm9Q0hKjcVC.glb`, medida: 'comprimento', metros: 4, rotacaoY: 0, solido: true, observacao: 'Inseto gigante do easter egg (Etapa 5).' },
   escorpiao: { arquivo: `${PI}Scorpion by jeremy - cJfrRPiSgA4.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true, observacao: 'Comprido em X: deve precisar de rotacaoY ±90 (Etapa 5).' },
   aranha: { arquivo: `${PI}Spider by Quaternius - yRYJiAJyiM.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true, observacao: '5 animações.' },

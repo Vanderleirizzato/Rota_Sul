@@ -88,6 +88,25 @@ export const BIOMAS = {
       { modelo: 'rocha', porKm: 10, escala: [0.7, 1.6] },
     ],
   },
+
+  // Litoral catarinense: plano, grama clara de restinga, morros só lá no fundo.
+  // Os coqueiros da orla e os prédios vêm das fileiras da fase, não daqui.
+  litoral: {
+    terreno: {
+      corGrama: 0x7a9a46,
+      corGramaEscura: 0x5e8236,
+      corTerra: 0x9d978b, // calçada cinza-clara do lado da cidade
+      corRocha: 0x7d7468,
+      alturaMorros: 4,
+      larguraMorros: 220,
+      subidaAoLonge: 0.14,
+      semente: 21,
+    },
+    faixaPerto: [6, 14],
+    plantasPerto: [{ modelo: 'palmeiraBaixa', porKm: 14, escala: [0.8, 1.2] }],
+    arvoresLonge: { porKm: 260, faixa: [110, 320], corCopa: 0x3d7a2c, corTronco: 0x5a4330 },
+    pedras: [],
+  },
 } satisfies Record<string, ConfigBioma>;
 
 export type IdBioma = keyof typeof BIOMAS;

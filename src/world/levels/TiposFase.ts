@@ -48,6 +48,77 @@ export interface ObjetoFase {
   escala?: number;
   /** Sobe (+) ou enterra (−) o objeto, em metros. Paredões ficam bons um pouco enterrados. */
   altura?: number;
+  /**
+   * Altura fixa (m) em vez de "apoiado no chão". Para o que não fica em
+   * terra firme: navios no mar, por exemplo (a altura da água menos o calado).
+   */
+  alturaAbsoluta?: number;
+}
+
+/**
+ * Uma FILEIRA de objetos iguais (ou sorteados de uma lista) ao longo da pista:
+ * coqueiros da orla, postes, prédios, pilhas de contêineres. Em vez de listar
+ * 150 coqueiros um por um, dizemos "um a cada 24 m, deste trecho até aquele".
+ */
+export interface FileiraFase {
+  /** Modelos sorteados para cada posição (um só = todos iguais). */
+  modelos: IdModelo[];
+  lado: Lado;
+  /** Distância (m) do centro da pista até o centro dos objetos. */
+  afastamento: number;
+  /** Metros entre um objeto e o próximo, ao longo da pista. */
+  espacamento: number;
+  /** Trecho da pista (m desde o início) onde a fileira existe. */
+  inicio: number;
+  fim: number;
+  /** Rotação extra em Y (graus). 0 = de frente para a pista; 90 = "deitado" ao longo dela. */
+  rotacao?: number;
+  /** Sorteio para não parecer feito com régua: até quantos metros/graus para cada lado. */
+  variacaoAfastamento?: number;
+  variacaoRotacao?: number;
+  /** Tamanho sorteado entre os dois valores (1 = tamanho do manifesto). */
+  escala?: [min: number, max: number];
+  /** Chance (0 a 1) de pular uma posição, deixando um buraco na fileira. */
+  falhas?: number;
+  /** Empilha objetos (contêineres): quantidade sorteada entre os dois valores. */
+  pilha?: [min: number, max: number];
+  /** Trechos (m) em que a fileira é interrompida: entradas, passagens. */
+  vaos?: [inicio: number, fim: number][];
+  /**
+   * Colisor de cada objeto: 'caixa' (prédios, contêineres), 'tronco' (um
+   * cilindro fino: postes, coqueiros) ou 'nenhum' (decoração atravessável).
+   */
+  colisor: 'caixa' | 'tronco' | 'nenhum';
+  /** Raio (m) do cilindro quando colisor = 'tronco'. */
+  raioTronco?: number;
+  /** Poste aceso: uma lâmpada que brilha no ponto `lampada` do manifesto. */
+  acesa?: boolean;
+}
+
+/** Mar de um dos lados da pista, com praia descendo até a água. */
+export interface DadosMar {
+  lado: Lado;
+  /** Altura da água (m). A pista precisa ficar acima disso. */
+  nivel: number;
+  /** Calçadão: faixa plana (m, a partir da beira do acostamento) antes da areia. */
+  calcadao: number;
+  /** Onde a areia encontra a água (m, a partir da beira do acostamento). */
+  linhaDagua: number;
+  corAgua: number;
+  corAreia: number;
+  corCalcadao: number;
+}
+
+/**
+ * Pátio: área calçada e plana fora da pista (o porto, um estacionamento).
+ * Ali o carro anda livre: sem freio de grama e sem voltar para a pista sozinho.
+ */
+export interface DadosPatio {
+  inicio: number;
+  fim: number;
+  lado: Lado;
+  /** Largura (m) a partir da beira do acostamento. */
+  largura: number;
 }
 
 /** Rio atravessando a pista por baixo de uma ponte. */
@@ -76,6 +147,9 @@ export interface DadosAndarilhos {
   quantidade: number;
   /** Comprimento (m) do trecho de cada um. */
   trecho: number;
+  /** Só andam até esta distância (m). Sem ele, até perto da chegada. Útil quando o fim da
+   *  pista não tem acostamento livre (o porto, cheio de contêineres). */
+  ate?: number;
   /** Paradas de descanso: bicicleta encostada e um mochileiro parado ao lado. */
   paradas: { distancia: number; lado: Lado }[];
 }
@@ -95,7 +169,10 @@ export interface DadosFase {
   bioma: IdBioma;
   iluminacao: ConfigLuz;
   objetos: ObjetoFase[];
+  fileiras?: FileiraFase[];
   rio?: DadosRio;
+  mar?: DadosMar;
+  patios?: DadosPatio[];
   plateia: DadosPlateia[];
   andarilhos?: DadosAndarilhos;
   // O tráfego (carros, ônibus, caminhões) entra na Etapa 4.

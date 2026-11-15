@@ -18,6 +18,14 @@ export interface Cenario {
   /** Distância (m) da linha de chegada; null = sem corrida (pista de teste). */
   chegada: number | null;
   luz: ConfigLuz;
+  /**
+   * Fora da pista, este ponto é uma área onde o carro anda livre (pátio do
+   * porto)? Lá não há freio de grama nem volta automática para a pista.
+   * `lateral` > 0 = esquerda; `fora` = metros depois da beira do acostamento.
+   */
+  areaLivre(distancia: number, lateral: number, fora: number): boolean;
+  /** Altura da água do mar (m), ou null se a fase não tem mar. Quem cai nela volta para a pista. */
+  nivelMar: number | null;
   /** Animações do cenário (água, névoa, plateia). Chamado a cada quadro. */
   atualizar(dt: number, camera: PerspectiveCamera, alturaEmPixels: number, posicaoCarro: Vector3): void;
   /** Liga/desliga o que pesa no cenário (árvores detalhadas, sombra da mata). */

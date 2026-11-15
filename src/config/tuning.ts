@@ -229,6 +229,9 @@ export const tuning = {
     tempoForaPista: 2,
     /** Metros abaixo do asfalto (caiu da ponte, rolou barranco abaixo) para voltar na hora. */
     quedaAbaixoPista: 6,
+    /** Fases com mar: o carro volta para a pista quando o centro dele fica abaixo
+     *  deste tanto (m) acima da água. Mais alto: volta antes de molhar as rodas. */
+    alturaNoMar: 0.3,
   },
 
   corrida: {

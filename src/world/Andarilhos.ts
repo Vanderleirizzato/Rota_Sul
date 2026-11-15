@@ -166,7 +166,7 @@ export class Andarilhos {
   /** Espalha os trechos pela pista, longe da largada, da chegada e da ponte. */
   private dividirTrechos(quantidade: number, comprimento: number): [number, number][] {
     const inicio = this.fase.largada + FOLGA_LARGADA_CHEGADA;
-    const fim = this.fase.chegada - FOLGA_LARGADA_CHEGADA;
+    const fim = Math.min(this.fase.chegada - FOLGA_LARGADA_CHEGADA, this.fase.andarilhos?.ate ?? Infinity);
     const ponte = this.fase.rio?.distancia;
     const trechos: [number, number][] = [];
     for (let k = 0; k < quantidade; k++) {

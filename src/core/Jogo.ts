@@ -81,7 +81,7 @@ export class Jogo {
   private readonly posDesenho = new Vector3();
   private readonly rotDesenho = new Quaternion();
 
-  private constructor(luz: ConfigLuz) {
+  private constructor(luz: ConfigLuz, idFase: IdFase | 'teste') {
     this.renderizador = criarRenderizador();
     this.camera = new CameraPerseguicao(window.innerWidth / window.innerHeight);
     this.iluminacao = new Iluminacao(this.cena, luz);
@@ -92,6 +92,11 @@ export class Jogo {
       () => this.carro.fisico.aplicarMassa(),
       (nivel) => this.aplicarQualidade(nivel),
       (mostrar) => this.verColisores.ligar(mostrar),
+      {
+        ...Object.fromEntries(Object.entries(FASES).map(([id, f]) => [f.nome, id])),
+        'Pista de teste': 'teste',
+      },
+      idFase,
     );
     this.aplicarQualidade(QUALIDADE_PADRAO);
 
@@ -114,7 +119,7 @@ export class Jogo {
     const pedida = new URLSearchParams(window.location.search).get('fase');
     const idFase: IdFase | 'teste' = pedida === 'teste' ? 'teste' : pedida && pedida in FASES ? (pedida as IdFase) : FASE_INICIAL;
     // A luz precisa existir antes da cena; o resto da fase vem depois.
-    const jogo = new Jogo(idFase === 'teste' ? LUZ_PADRAO : FASES[idFase].iluminacao);
+    const jogo = new Jogo(idFase === 'teste' ? LUZ_PADRAO : FASES[idFase].iluminacao, idFase);
     jogo.cenario = idFase === 'teste' ? criarPistaTeste(jogo.cena, jogo.fisica) : await construirFase(FASES[idFase], jogo.cena, jogo.fisica);
     jogo.cenario.aplicarQualidade(QUALIDADES[jogo.nivelQualidade]);
     const largada = jogo.cenario.largada;
@@ -224,6 +229,7 @@ export class Jogo {
     if (this.pausado) return;
     if (t.apertou('trocarCamera')) this.camera.proximoModo();
     if (t.apertou('reposicionar')) this.reposicionar();
+    if (t.apertou('reiniciar')) this.reiniciarCorrida();
     if (t.apertou('carro1')) void this.trocarCarro('carro1');
     if (t.apertou('carro2')) void this.trocarCarro('carro2');
     if (t.apertou('confirmar') && this.corrida?.estado === 'chegou') this.reiniciarCorrida();
@@ -245,10 +251,18 @@ export class Jogo {
     this.indiceNaPista = proj.indice;
     this.distanciaNaPista = proj.distancia;
 
-    this.carro.fisico.naGrama = proj.afastamento > tracado.meiaLarguraTotal;
+    // Pátio (porto): chão calçado, o carro anda livre. Em qualquer outro
+    // lugar fora do acostamento, é "grama": freia e, longe demais, volta.
+    const depoisDaBeira = proj.afastamento - tracado.meiaLarguraTotal;
+    const livre = this.cenario.areaLivre(proj.distancia, proj.lateral, depoisDaBeira);
+    this.carro.fisico.naGrama = depoisDaBeira > 0 && !livre;
     const r = tuning.reposicionamento;
-    const fora = proj.afastamento > tracado.meiaLarguraTotal + r.distanciaForaPista;
-    const caiu = posicao.y < tracado.alturaSuperficie(proj.indice, 0) - r.quedaAbaixoPista;
+    const fora = !livre && depoisDaBeira > r.distanciaForaPista;
+    const nivelMar = this.cenario.nivelMar;
+    const caiu =
+      posicao.y < tracado.alturaSuperficie(proj.indice, 0) - r.quedaAbaixoPista ||
+      // Entrou no mar: volta na hora (carro não nada).
+      (nivelMar !== null && posicao.y < nivelMar + r.alturaNoMar);
     this.tempoForaDaPista = fora ? this.tempoForaDaPista + dt : 0;
     if (caiu || this.tempoForaDaPista > r.tempoForaPista) this.reposicionar();
   }
@@ -285,6 +299,8 @@ export class Jogo {
     this.indiceNaPista = undefined;
     this.telaFim.esconder();
     this.corrida?.reiniciar();
+    // Corrida nova, tanque cheio: senão o nitro gasto na anterior faria falta.
+    this.carro.fisico.nitro = 1;
   }
 
   private definirPausa(pausado: boolean): void {

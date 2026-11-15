@@ -52,7 +52,7 @@ Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais do
 ## Controles
 - `W`/`↑` acelerar, `S`/`↓` frear e ré, `A`/`D` ou `←`/`→` direção.
 - `Espaço` freio de mão (drift), `Shift` nitro.
-- `R` reposicionar o carro na pista, `C` trocar câmera, `Esc` pausar.
+- `R` reposicionar o carro na pista, `T` reiniciar a corrida da largada, `C` trocar câmera, `Esc` pausar.
 
 ## Arquitetura Modular
 - `/src/config/`: `tuning.ts` e `quality.ts`.

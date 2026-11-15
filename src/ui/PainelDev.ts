@@ -33,17 +33,29 @@ export class PainelDev {
    *   carro (o resto é lido a cada passo e não precisa de aviso).
    * @param aoMudarQualidade chamado ao escolher outra qualidade gráfica.
    * @param aoMostrarColisores liga/desliga o desenho dos colisores físicos.
+   * @param fases nome de cada fase → identificador (o que vai em ?fase= na URL).
+   * @param faseAtual identificador da fase aberta agora.
    */
   constructor(
     aoMudarMassa: () => void,
     aoMudarQualidade: (nivel: NivelQualidade) => void,
     aoMostrarColisores: (mostrar: boolean) => void,
+    fases: Record<string, string>,
+    faseAtual: string,
   ) {
     this.gui = new GUI({ title: 'Modo Dev: tuning (F2)' });
     // .listen() faz o painel reler o valor sozinho; .disable() impede edição.
     this.gui.add(this.medidor, 'fps').name('FPS').listen().disable();
     // Seletor de qualidade (provisório: na Etapa 5 ele vai para o menu).
     const opcoes = Object.fromEntries(Object.entries(QUALIDADES).map(([nivel, q]) => [q.nome, nivel]));
+    // Seletor de fase (provisório: na Etapa 5 ele vai para o menu). Trocar de
+    // fase recarrega a página com ?fase=..., o jeito mais simples de começar do zero.
+    this.gui
+      .add({ fase: faseAtual }, 'fase', fases)
+      .name('Fase')
+      .onChange((id: string) => {
+        window.location.search = `?fase=${id}`;
+      });
     this.gui.add({ qualidade: QUALIDADE_PADRAO }, 'qualidade', opcoes).name('Qualidade').onChange(aoMudarQualidade);
     // Desenha em linhas o que a FÍSICA enxerga (caixas, cascos, cilindros).
     // Bom para achar "obstáculo invisível": colisor que não bate com o desenho.

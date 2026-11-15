@@ -11,7 +11,8 @@ import {
 import type { MundoFisico } from '../physics/MundoFisico';
 import { texturaDetalheChao } from '../graphics/Texturas';
 import type { ConfigBioma } from './biomas';
-import type { DadosRio } from './levels/TiposFase';
+import type { DadosMar, DadosPatio, DadosRio } from './levels/TiposFase';
+import { pesoPatio } from './Patios';
 import { ruido2D, ruidoMorros, transicao } from './Ruido';
 import { distanciaHorizontal, type Tracado } from './Tracado';
 
@@ -26,7 +27,34 @@ import { distanciaHorizontal, type Tracado } from './Tracado';
 // estrada: ninguém cai para fora do mundo (CLAUDE.md).
 //
 // O rio cava um leito atravessando a pista, por baixo da ponte.
+//
+// Do lado do mar não há morros: calçadão plano, depois a areia descendo até
+// a água e o fundo do mar. Nos pátios (porto), o chão fica plano e cinza,
+// na altura do asfalto.
 // =============================================================================
+
+/** O que existe em volta da pista, além do bioma. Tudo opcional. */
+export interface ArredoresTerreno {
+  rio?: DadosRio;
+  mar?: DadosMar;
+  patios?: DadosPatio[];
+}
+
+/** Tipo de chão de cada ponto da grade (decide a cor). */
+const enum Chao {
+  Natural,
+  Calcadao,
+  Areia,
+}
+
+/** Cor do piso dos pátios (concreto). */
+const COR_PATIO = 0x8e8c86;
+/** Pátio: o chão fica este tanto (m) abaixo do asfalto. Pouco: sem degrau na beira. */
+const PATIO_ABAIXO_DO_ASFALTO = 0.08;
+/** Depois da linha d'água, o fundo do mar desce até esta profundidade (m)... */
+const PROFUNDIDADE_MAR = 4;
+/** ...ao longo deste tanto (m). */
+const DESCIDA_FUNDO_MAR = 40;
 
 /** Espaço entre os pontos da grade (m). Menor: relevo mais detalhado e mais pesado. */
 const ESPACAMENTO = 8;
@@ -57,6 +85,12 @@ export class Terreno {
   private readonly alturas: Float32Array;
   /** Distância de cada ponto da grade até a beira da pista (m), usada nas cores. */
   private readonly foraDaPista: Float32Array;
+  private readonly chao: Uint8Array;
+  /** 0 a 1: quanto o ponto é pátio calçado. */
+  private readonly pavimento: Float32Array;
+  private readonly rio: DadosRio | undefined;
+  private readonly mar: DadosMar | undefined;
+  private readonly patios: DadosPatio[];
   private readonly colunas: number;
   private readonly linhas: number;
   private readonly x0: number;
@@ -67,8 +101,11 @@ export class Terreno {
     fisica: MundoFisico,
     private readonly tracado: Tracado,
     private readonly bioma: ConfigBioma,
-    private readonly rio: DadosRio | undefined,
+    arredores: ArredoresTerreno = {},
   ) {
+    this.rio = arredores.rio;
+    this.mar = arredores.mar;
+    this.patios = arredores.patios ?? [];
     // Retângulo que envolve a pista inteira, mais a margem.
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
     for (const p of tracado.pontos) {
@@ -82,14 +119,18 @@ export class Terreno {
 
     this.alturas = new Float32Array(this.colunas * this.linhas);
     this.foraDaPista = new Float32Array(this.colunas * this.linhas);
+    this.chao = new Uint8Array(this.colunas * this.linhas);
+    this.pavimento = new Float32Array(this.colunas * this.linhas);
     const p = new Vector3();
     for (let l = 0; l < this.linhas; l++) {
       for (let c = 0; c < this.colunas; c++) {
         p.set(this.x0 + c * ESPACAMENTO, 0, this.z0 + l * ESPACAMENTO);
         const k = l * this.colunas + c;
-        const { altura, fora } = this.calcularAltura(p);
+        const { altura, fora, chao, pavimento } = this.calcularAltura(p);
         this.alturas[k] = altura;
         this.foraDaPista[k] = fora;
+        this.chao[k] = chao;
+        this.pavimento[k] = pavimento;
       }
     }
 
@@ -123,7 +164,13 @@ export class Terreno {
 
   // ---------------------------------------------------------------------------
 
-  private calcularAltura(p: Vector3): { altura: number; fora: number } {
+  /** Este ponto fica num pátio? (Lá não se planta nada.) */
+  estaEmPatio(p: Vector3): boolean {
+    if (this.patios.length === 0) return false;
+    return this.calcularAltura(p).pavimento > 0.01;
+  }
+
+  private calcularAltura(p: Vector3): { altura: number; fora: number; chao: Chao; pavimento: number } {
     const t = this.tracado;
     const proj = t.projetar(p);
     const i = proj.indice;
@@ -135,8 +182,23 @@ export class Terreno {
     const lateral = Math.min(Math.max(proj.lateral, -borda), borda);
     const base = t.alturaSuperficie(i, lateral) - ABAIXO_DO_ASFALTO;
 
-    const { alturaMorros, larguraMorros, subidaAoLonge, semente } = this.bioma.terreno;
     const fora = afastamento - borda;
+    const pavimento = pesoPatio(this.patios, proj.distancia, proj.lateral, fora);
+    // Pátio: plano, quase na altura do asfalto.
+    const alturaPatio = base + ABAIXO_DO_ASFALTO - PATIO_ABAIXO_DO_ASFALTO;
+
+    const mar = this.mar;
+    if (mar && Math.sign(proj.lateral) === (mar.lado === 'esquerda' ? 1 : -1)) {
+      const praia = this.alturaPraia(mar, base, fora);
+      return {
+        altura: praia + (alturaPatio - praia) * pavimento,
+        fora,
+        chao: fora < mar.calcadao ? Chao.Calcadao : Chao.Areia,
+        pavimento,
+      };
+    }
+
+    const { alturaMorros, larguraMorros, subidaAoLonge, semente } = this.bioma.terreno;
     const inicioEncosta = FAIXA_PLANA + LARGURA_BARRANCO;
     const subida =
       FRACAO_BARRANCO * transicao(FAIXA_PLANA, inicioEncosta, fora) +
@@ -146,7 +208,18 @@ export class Terreno {
     let altura = base + subida * (morro + longe);
 
     if (this.rio) altura = Math.min(altura, this.alturaComRio(p, altura));
-    return { altura, fora };
+    altura += (alturaPatio - altura) * pavimento;
+    return { altura, fora, chao: Chao.Natural, pavimento };
+  }
+
+  /**
+   * Lado do mar: calçadão plano, areia descendo até a linha d'água e, depois
+   * dela, o fundo do mar (escondido pela água).
+   */
+  private alturaPraia(mar: DadosMar, base: number, fora: number): number {
+    const naAgua = mar.nivel - 0.15;
+    if (fora <= mar.linhaDagua) return base + (naAgua - base) * transicao(mar.calcadao, mar.linhaDagua, fora);
+    return naAgua - PROFUNDIDADE_MAR * transicao(mar.linhaDagua, mar.linhaDagua + DESCIDA_FUNDO_MAR, fora);
   }
 
   /**
@@ -219,6 +292,9 @@ export class Terreno {
     const gramaEscura = new Color(corGramaEscura);
     const terra = new Color(corTerra);
     const rocha = new Color(corRocha);
+    const patio = new Color(COR_PATIO);
+    const areia = new Color(this.mar?.corAreia ?? corTerra);
+    const calcadao = new Color(this.mar?.corCalcadao ?? corTerra);
     const normais = geo.getAttribute('normal');
     const posicoes = geo.getAttribute('position');
     const cores = new Float32Array(posicoes.count * 3);
@@ -226,9 +302,14 @@ export class Terreno {
     const p = new Vector3();
     for (let k = 0; k < posicoes.count; k++) {
       p.fromBufferAttribute(posicoes, k);
-      cor.copy(grama).lerp(gramaEscura, ruido2D(p.x, p.z, 25, 3));
-      cor.lerp(terra, 1 - transicao(2, 7, this.foraDaPista[k]));
-      cor.lerp(rocha, 1 - transicao(INCLINACAO_PEDRA - 0.12, INCLINACAO_PEDRA, normais.getY(k)));
+      if (this.chao[k] === Chao.Calcadao) cor.copy(calcadao);
+      else if (this.chao[k] === Chao.Areia) cor.copy(areia).lerp(calcadao, 0.15 * ruido2D(p.x, p.z, 6, 5));
+      else {
+        cor.copy(grama).lerp(gramaEscura, ruido2D(p.x, p.z, 25, 3));
+        cor.lerp(terra, 1 - transicao(2, 7, this.foraDaPista[k]));
+        cor.lerp(rocha, 1 - transicao(INCLINACAO_PEDRA - 0.12, INCLINACAO_PEDRA, normais.getY(k)));
+      }
+      cor.lerp(patio, this.pavimento[k]);
       cores.set([cor.r, cor.g, cor.b], k * 3);
     }
     return cores;

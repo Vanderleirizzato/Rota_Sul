@@ -12,6 +12,8 @@ export const TECLAS = {
   freioMao: ['Space'],
   nitro: ['ShiftLeft', 'ShiftRight'],
   reposicionar: ['KeyR'],
+  /** Recomeça a corrida do zero, da largada (T de "tentar de novo"). */
+  reiniciar: ['KeyT'],
   trocarCamera: ['KeyC'],
   carro1: ['Digit1', 'Numpad1'],
   carro2: ['Digit2', 'Numpad2'],

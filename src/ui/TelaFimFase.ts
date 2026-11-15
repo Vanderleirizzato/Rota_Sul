@@ -25,7 +25,7 @@ export class TelaFimFase {
         <div class="tela-fim-fase">${nomeFase}</div>
         <div class="tela-fim-tempo">${formatarTempo(tempo)}</div>
         ${linhaRecorde}
-        <div class="tela-fim-dica"><kbd>Enter</kbd> correr de novo</div>
+        <div class="tela-fim-dica"><kbd>Enter</kbd> ou <kbd>T</kbd> correr de novo</div>
       </div>`;
     this.elemento.classList.add('visivel');
   }

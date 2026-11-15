@@ -135,6 +135,7 @@ function sortearPosicoes(plantio: Plantio, porKm: number, faixa: [number, number
     if (tracado.projetar(p).afastamento < borda + faixa[0] - 0.5) continue;
     p.y = terreno.alturaEm(p.x, p.z);
     if (p.y < plantio.nivelAgua + 0.5) continue;
+    if (terreno.estaEmPatio(p)) continue;
 
     const tamanho = escala[0] + sorteio() * (escala[1] - escala[0]);
     giro.setFromEuler(eixoY.set(0, sorteio() * Math.PI * 2, 0));

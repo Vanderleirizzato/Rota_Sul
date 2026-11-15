@@ -43,6 +43,7 @@ Os nomes no formato `"Nome by Autor - código.glb"` parecem vir do site [Poly Pi
 | Rapaz de moletom | `pessoas e Insetos/Hoodie Character by Quaternius` | Quaternius | CC0 (domínio público) |
 | Senhor | `pessoas e Insetos/Old Guy by Polygonal Mind` | Polygonal Mind | a preencher |
 | Bicicleta | `pessoas e Insetos/Bicycle by Poly by Google` | Poly by Google | CC-BY 3.0 |
+| Capivara | `pessoas e Insetos/Capybara by Poly by Google` | Poly by Google | CC-BY 3.0 |
 | Louva-a-deus | `pessoas e Insetos/Praying Mantis by Lorenzo Cinalli` | Lorenzo Cinalli | a preencher |
 | Escorpião | `pessoas e Insetos/Scorpion by jeremy` | jeremy | a preencher |
 | Aranha | `pessoas e Insetos/Spider by Quaternius` | Quaternius | CC0 (domínio público) |

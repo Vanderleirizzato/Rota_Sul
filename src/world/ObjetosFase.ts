@@ -9,11 +9,12 @@ import type { Terreno } from './Terreno';
 import type { Tracado } from './Tracado';
 
 // Coloca na pista os objetos listados nos dados da fase (paredões, pedras
-// grandes, o arco...) e cria um colisor de caixa para os sólidos.
+// grandes, o arco...) e cria um colisor para os sólidos.
 //
-// Por que caixas, e não o formato exato do modelo? Colisor com milhares de
-// triângulos deixa a física lenta, e o jogador nem percebe a diferença
-// numa batida a 100 km/h. Uma caixa do tamanho do objeto basta.
+// Colisor: o "casco convexo" do modelo (ver FormaColisor.ts), que embrulha a
+// pedra bem justo. Não usamos a malha exata (milhares de triângulos deixam a
+// física lenta), nem uma caixa (os cantos dela sobram para fora da pedra e
+// viram obstáculos invisíveis). Arcos usam duas caixas, uma por pilar.
 
 const EIXO_Y = new Vector3(0, 1, 0);
 
@@ -33,6 +34,8 @@ async function colocarObjeto(cena: Scene, fisica: MundoFisico, tracado: Tracado,
   const posicao = tracado.pontoAoLado(o.distancia, o.lado, o.afastamento);
   // Em cima da pista: apoia no asfalto. Fora dela: apoia no terreno.
   posicao.y = (o.lado === 'centro' ? tracado.alturaSuperficie(i, 0) : terreno.alturaEm(posicao.x, posicao.z)) + (o.altura ?? 0);
+  // Navios e afins: altura fixa (no mar não há "chão" onde apoiar).
+  if (o.alturaAbsoluta !== undefined) posicao.y = o.alturaAbsoluta;
 
   // Ângulo: no centro, o objeto olha na direção da pista; dos lados, olha PARA a pista.
   const e = tracado.esquerdas[i];
