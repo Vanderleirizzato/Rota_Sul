@@ -23,6 +23,12 @@ import type { Tracado } from './Tracado';
 // curvas em "S" a pista passa perto de si mesma) ou dentro do rio, é descartada.
 // =============================================================================
 
+/** Medidas do tronco da árvore leve (Instancias.ts) numa árvore de escala 1: raio da base e altura. */
+const RAIO_TRONCO_LEVE = 0.04;
+const ALTURA_TRONCO_LEVE = 0.35;
+/** Quanto (m) cada planta é enterrada no chão (ver sortearPosicoes). */
+const ENTERRADA = 0.4;
+
 /** Contexto comum a todas as plantas. */
 interface Plantio {
   cena: Scene;
@@ -75,6 +81,18 @@ export async function plantarVegetacao(
 
   await Promise.all(todas.map((planta, k) => plantarModelo(plantio, planta, sorteios[k], controle)));
   controle.malhas.push(...criarInstancias(cena, criarArvoreLeve(leve.corCopa, leve.corTronco), matrizesLeves.map((m) => m.matriz)));
+  // As árvores de longe também têm tronco sólido: no passeio o carro chega
+  // até elas. (Antes, ninguém passava dos 14 m fora da pista, e elas eram só
+  // cenário.) Um cilindro fixo é barato para a física, mesmo aos milhares:
+  // o Rapier só faz a conta fina com os que estão perto do carro.
+  for (const { posicao, escala } of matrizesLeves) {
+    const meiaAltura = ALTURA_TRONCO_LEVE * escala * 0.5;
+    plantio.fisica.criarCilindroFixo(
+      { x: posicao.x, y: posicao.y - ENTERRADA + meiaAltura, z: posicao.z },
+      RAIO_TRONCO_LEVE * escala,
+      meiaAltura,
+    );
+  }
   return controle;
 }
 
@@ -139,7 +157,7 @@ function sortearPosicoes(plantio: Plantio, porKm: number, faixa: [number, number
 
     const tamanho = escala[0] + sorteio() * (escala[1] - escala[0]);
     giro.setFromEuler(eixoY.set(0, sorteio() * Math.PI * 2, 0));
-    const posicao = p.clone().setY(p.y - 0.4); // enterra um pouco: em encosta, a base não flutua
+    const posicao = p.clone().setY(p.y - ENTERRADA); // enterra um pouco: em encosta, a base não flutua
     resultado.push({ matriz: new Matrix4().compose(posicao, giro, new Vector3(tamanho, tamanho, tamanho)), posicao: p, escala: tamanho });
   }
   return resultado;

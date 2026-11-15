@@ -164,6 +164,16 @@ export class Terreno {
 
   // ---------------------------------------------------------------------------
 
+  /** O retângulo (x, z) que o terreno cobre. Fora dele não há chão. */
+  get limites(): { minX: number; maxX: number; minZ: number; maxZ: number } {
+    return {
+      minX: this.x0,
+      maxX: this.x0 + (this.colunas - 1) * ESPACAMENTO,
+      minZ: this.z0,
+      maxZ: this.z0 + (this.linhas - 1) * ESPACAMENTO,
+    };
+  }
+
   /** Este ponto fica num pátio? (Lá não se planta nada.) */
   estaEmPatio(p: Vector3): boolean {
     if (this.patios.length === 0) return false;

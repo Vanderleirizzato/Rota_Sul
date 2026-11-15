@@ -38,6 +38,12 @@
 }
 .menu-titulo.pequeno { font-size: 44px; }
 .menu-subtitulo { margin: 6px 0 32px; letter-spacing: 3px; opacity: 0.75; }
+/* Andamento da viagem: Foz → Navegantes, com recorde ou cadeado. */
+.menu-viagem { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 4px 0 18px; font-size: 14px; }
+.menu-viagem-fase { display: inline-grid; justify-items: start; padding: 4px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.08); }
+.menu-viagem-fase small { color: #ffcc33; font-family: ui-monospace, Consolas, monospace; }
+.menu-viagem-fase.trancada { opacity: 0.5; }
+.menu-viagem-seta { opacity: 0.5; }
 
 .menu-opcao {
   position: relative;

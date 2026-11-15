@@ -315,6 +315,37 @@ export const tuning = {
   corrida: {
     /** Segundos de contagem regressiva antes da largada (3, 2, 1...). */
     contagemRegressiva: 3,
+    /** Raio (m) do marcador de missão: dentro dele, aparece o convite para correr. */
+    raioMarcador: 8,
+    /**
+     * Abaixo desta velocidade (km/h) o Enter começa a corrida. Mais alto: dá
+     * para largar "de passagem"; mais baixo: tem que parar no marcador. Sem
+     * esse limite, quem passa voando pelo marcador apertando A (nitro e
+     * confirmar no controle) começaria uma corrida sem querer.
+     */
+    velocidadeParaComecarKmh: 25,
+  },
+
+  passeio: {
+    /**
+     * No passeio, o carro volta sozinho só se atravessar o chão: este tanto (m)
+     * abaixo do terreno. (Fora da pista não tem mais volta automática.)
+     */
+    abaixoDoChao: 4,
+  },
+
+  pecas: {
+    /** Distância (m) do carro até a peça para pegá-la. Maior: pega "de raspão". */
+    raioColeta: 3.5,
+    // Bônus de CADA peça, como fração (0.03 = +3%). Acumulam: duas peças de
+    // turbo = +3% e depois mais +3% sobre o novo valor. Valores altos deixam
+    // o carro forte demais depois de juntar todas; baixos, ninguém percebe.
+    /** Turbo: força do motor (aceleração). */
+    turbo: 0.03,
+    /** Pneus: aderência dianteira e traseira (curva mais firme). */
+    pneus: 0.03,
+    /** Nitro: quanto tempo o tanque de nitro dura. */
+    nitro: 0.1,
   },
 
   camera: {

@@ -135,7 +135,7 @@ const daleNavegantes: Pintor = (g, textura) => {
   g.fillText('Congelados Saudáveis', 470, 335);
   g.font = 'bold 38px Arial, sans-serif';
   g.fillText('📍 Navegantes · SC', 470, 410);
-  desenharImagem(`${PASTA}Conheça_Dale_congelados_em_Navegantes1.jfif`, textura, (img) => {
+  desenharImagem(`${PASTA}dale-navegantes-2.jfif`, textura, (img) => {
     g.drawImage(img, 40, 56, 400, 400);
   });
 };
@@ -159,7 +159,7 @@ const modaVerao: Pintor = (g, textura) => {
   g.fillText('2027', 50, 420);
   // A foto é pessoal e não vai para o GitHub: se o arquivo não existir,
   // desenharImagem não faz nada e o outdoor fica só com o texto.
-  desenharImagem(`${PASTA}outdoor_Moda_Verão_ 2027.jpg`, textura, (img) => {
+  desenharImagem(`${PASTA}moda-verao-2027.jpg`, textura, (img) => {
     // Recorta a foto para caber na metade direita, sem esticar.
     const x = 520;
     const larguraArea = LARGURA - x - 30;

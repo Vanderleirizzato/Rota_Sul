@@ -282,4 +282,21 @@ export const FASE2_NAVEGANTES: DadosFase = {
   insetos: { distancia: 2320, modelos: ['escorpiao', 'aranha', 'louvaDeus'] },
   // No esconderijo atrás dos contêineres do porto (entrada pela fresta em ~4037 m).
   trofeu: { distancia: 4045, lado: 'esquerda', afastamento: 22 },
+
+  // --- progressão -----------------------------------------------------------
+  // Navegantes é a última fase por enquanto: este tempo vai liberar a próxima
+  // que alguém criar depois dela na lista (levels/index.ts).
+  // 2:15. Calibrado com um piloto automático: sem nitro, freando cedo nas
+  // curvas e batendo no trânsito, ele fez 2:22. Uma corrida limpa, com nitro, fica abaixo.
+  tempoParaLiberar: 135,
+  pecas: [
+    // No caminho da corrida.
+    { tipo: 'turbo', distancia: 800, lado: 'direita', afastamento: 2 },
+    { tipo: 'pneus', distancia: 2000, lado: 'esquerda', afastamento: 2 },
+    { tipo: 'nitro', distancia: 3300, lado: 'direita', afastamento: 2 },
+    // Escondidas: na areia da praia, atrás das casas e no esconderijo do porto.
+    { tipo: 'turbo', distancia: 1500, lado: 'direita', afastamento: 30 },
+    { tipo: 'pneus', distancia: 2600, lado: 'esquerda', afastamento: 60 },
+    { tipo: 'nitro', distancia: 4070, lado: 'esquerda', afastamento: 30 },
+  ],
 };

@@ -26,9 +26,10 @@ O jogo é um presente para o Enzo, estudante do 2º ano de ADS. Além de diverti
 - **Modo Dev**: painel `lil-gui` que altera os valores de `tuning.ts` ao vivo. Fica escondido até ser liberado pelo easter egg do troféu (etapa 5); durante o desenvolvimento, a tecla `F2` abre o painel.
 
 ## Estrutura do mundo
-- **Fases lineares**, não mundo aberto. Cada fase é uma pista sobre `CatmullRomCurve3`, com início e chegada.
-- Pequenos desvios e áreas escondidas fora da pista são permitidos para os segredos.
-- O jogador não pode cair para fora do mundo: use barreiras, relevo ou reposicionamento automático na pista.
+- **Mapa livre por fase, corridas lineares.** Cada fase começa em **modo passeio**: o jogador anda livre pelo mapa, sem cronômetro. A corrida (uma pista sobre `CatmullRomCurve3`, com largada e chegada) começa num **marcador de missão** na largada, e só durante ela valem o cronômetro e a volta automática para a pista.
+- Áreas escondidas fora da pista são bem-vindas para os segredos.
+- O jogador não pode cair para fora do mundo: paredes invisíveis na borda do terreno, e reposicionamento ao cair na água ou atravessar o chão.
+- **Progressão (Etapa 8):** o jogo começa sempre em Foz; terminar a corrida abaixo de um tempo-meta libera a próxima fase da lista (`src/world/levels/index.ts`). O progresso é salvo pelo id de cada fase, para dar para inserir cidades no meio da viagem sem quebrar saves.
 
 ## Assets 3D (`public/models/`)
 Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais dos arquivos podem diferir dos nomes citados nos prompts; inspecione a pasta e faça a correspondência.
@@ -52,7 +53,8 @@ Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais do
 ## Controles
 - `W`/`↑` acelerar, `S`/`↓` frear e ré, `A`/`D` ou `←`/`→` direção.
 - `Espaço` freio de mão (drift), `Shift` nitro.
-- `R` reposicionar o carro na pista, `T` reiniciar a corrida da largada, `C` trocar câmera, `Esc` pausar.
+- `R` reposicionar o carro na pista, `T` (re)começar a corrida da largada, `C` trocar câmera, `Esc` pausar.
+- `Enter` no marcador de missão começa a corrida; na pausa, `Q` abandona a corrida; na chegada, `Enter` volta a passear e `N` segue para a próxima fase.
 
 ## Arquitetura Modular
 - `/src/config/`: `tuning.ts` e `quality.ts`.

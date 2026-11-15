@@ -1,9 +1,8 @@
 import { QUALIDADE_PADRAO, type NivelQualidade } from '../config/quality';
 import type { IdCarro } from '../world/assets';
-import { FASES, FASE_INICIAL, type IdFase } from '../world/levels';
 
 // =============================================================================
-// ESCOLHAS DO JOGADOR (carro, fase e qualidade)
+// ESCOLHAS DO JOGADOR (carro e qualidade)
 // =============================================================================
 // Ficam guardadas no navegador (localStorage): fechou o jogo e voltou, o
 // menu já abre no carro e na qualidade de antes.
@@ -14,12 +13,11 @@ import { FASES, FASE_INICIAL, type IdFase } from '../world/levels';
 
 export interface Escolhas {
   carro: IdCarro;
-  fase: IdFase;
   qualidade: NivelQualidade;
 }
 
 const CHAVE = 'rotaSul.escolhas';
-const PADRAO: Escolhas = { carro: 'carro1', fase: FASE_INICIAL, qualidade: QUALIDADE_PADRAO };
+const PADRAO: Escolhas = { carro: 'carro1', qualidade: QUALIDADE_PADRAO };
 const CARROS: readonly IdCarro[] = ['carro1', 'carro2', 'carro3'];
 const QUALIDADES: readonly NivelQualidade[] = ['baixo', 'medio', 'alto'];
 
@@ -30,7 +28,6 @@ export function lerEscolhas(): Escolhas {
     // exemplo um carro que não existe mais) não pode quebrar o jogo.
     return {
       carro: CARROS.find((c) => c === salvo.carro) ?? PADRAO.carro,
-      fase: typeof salvo.fase === 'string' && salvo.fase in FASES ? (salvo.fase as IdFase) : PADRAO.fase,
       qualidade: QUALIDADES.find((q) => q === salvo.qualidade) ?? PADRAO.qualidade,
     };
   } catch {

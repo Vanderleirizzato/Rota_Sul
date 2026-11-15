@@ -24,7 +24,9 @@ const BOTOES: Partial<Record<Acao, number[]>> = {
   voltar: [1],
   menu: [1], // na pausa: B volta ao menu
   reposicionar: [2],
+  abandonar: [2], // na pausa: X abandona a corrida
   trocarCamera: [3],
+  proximaFase: [3], // na tela de chegada: Y segue viagem
   reiniciar: [8],
   pausar: [9],
   cima: [12],

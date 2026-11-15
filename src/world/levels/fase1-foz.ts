@@ -186,4 +186,20 @@ export const FASE1_FOZ: DadosFase = {
   insetos: { distancia: 1205, modelos: ['aranha', 'louvaDeus', 'escorpiao'] },
   // No meio da viagem, depois do alto do morro.
   portico: { distancia: 1600, titulo: 'BEM-VINDO A ENZOLÂNDIA', subtitulo: 'Velocidade Máxima: Sem Limites' },
+
+  // --- progressão -----------------------------------------------------------
+  // Terminar a corrida abaixo deste tempo (s) libera Navegantes.
+  // 2:15. Calibrado com um piloto automático: sem nitro, freando cedo nas
+  // curvas e batendo no trânsito, ele fez 2:25. Uma corrida limpa, com nitro, fica abaixo.
+  tempoParaLiberar: 135,
+  pecas: [
+    // No caminho da corrida (dá para pegar correndo).
+    { tipo: 'turbo', distancia: 600, lado: 'direita', afastamento: 2 },
+    { tipo: 'pneus', distancia: 1450, lado: 'esquerda', afastamento: 2 },
+    { tipo: 'nitro', distancia: 2500, lado: 'direita', afastamento: 2 },
+    // Escondidas: atrás da estátua do cervo, no alto de um morro e na mata depois do rio.
+    { tipo: 'turbo', distancia: 1850, lado: 'esquerda', afastamento: 34 },
+    { tipo: 'pneus', distancia: 950, lado: 'direita', afastamento: 70 },
+    { tipo: 'nitro', distancia: 2200, lado: 'esquerda', afastamento: 45 },
+  ],
 };

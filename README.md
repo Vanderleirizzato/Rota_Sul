@@ -16,8 +16,16 @@ npm run build    # confere o TypeScript e gera a versão final em dist/
 Atalhos de endereço (bons para testar):
 
 - `localhost:5173/`: menu principal
-- `?fase=fase1` ou `?fase=fase2`: vai direto para a corrida
+- `?fase=fase1` ou `?fase=fase2`: vai direto para a fase (no jogo publicado, só se ela já foi liberada)
 - `?fase=teste`: pista de teste de física
+
+## Como se joga
+
+A viagem começa sempre em **Foz do Iguaçu**, em **modo passeio**: o mapa é livre, sem cronômetro. A bússola no alto da tela aponta a **coluna de luz amarela** da largada; pare dentro do anel dela e aperte **Enter** para a corrida começar. Durante a corrida valem o cronômetro e a volta automática para a pista.
+
+- **Tempo-meta:** terminar a corrida abaixo dele libera a próxima cidade. Aí aparece uma **coluna azul** logo depois da chegada: pare nela e aperte Enter para seguir viagem (ou **N** na tela de chegada).
+- **Peças de tuning:** engrenagens brilhantes espalhadas pelo mapa (algumas no caminho da corrida, outras escondidas). Cada uma deixa o carro um pouco melhor, para sempre: 🟠 turbo (motor), 🔵 pneus (aderência), 🟣 nitro (dura mais).
+- O progresso (cidades liberadas, peças e recordes) fica salvo no navegador.
 
 ## Controles
 
@@ -29,7 +37,10 @@ Atalhos de endereço (bons para testar):
 | Freio de mão (drift) | Espaço | B |
 | Nitro | Shift | A |
 | Reposicionar na pista | R | X |
-| Reiniciar a corrida | T | Back |
+| Começar a corrida (no marcador) | Enter | A |
+| (Re)começar a corrida da largada | T | Back |
+| Abandonar a corrida (na pausa) | Q | X |
+| Seguir para a próxima fase (na chegada) | N | Y |
 | Trocar câmera | C | Y |
 | Pausar | Esc | Start |
 | Voltar ao menu (na pausa ou no fim) | M | B |

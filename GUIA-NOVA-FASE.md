@@ -36,7 +36,9 @@ export const FASES = {
 } satisfies Record<string, DadosFase>;
 ```
 
-Pronto: ela já aparece no menu, e `localhost:5173/?fase=fase3` vai direto para ela.
+Pronto: ela já aparece na viagem do menu, e `localhost:5173/?fase=fase3` vai direto para ela (no `npm run dev`, mesmo trancada).
+
+**Pode inserir no meio!** Quer Cascavel entre Foz e Navegantes? Ponha `cascavel` entre `fase1` e `fase2` na lista. O progresso é salvo pelo `id` de cada fase, então quem já tinha liberado Navegantes continua com ela liberada. Só lembre de dar um `tempoParaLiberar` para a fase de antes (é ele que libera a seguinte).
 
 ### 3. Desenhe a estrada (`tracado`)
 
@@ -66,6 +68,8 @@ Tudo que fica **ao longo da pista** usa `distancia`, em metros desde o primeiro 
 | `barreiras` | muros fixos na beira das curvas perigosas |
 | `soltos` | cones e barreiras de plástico que voam na batida |
 | `outdoors`, `portico`, `insetos`, `trofeu` | os easter eggs (todos opcionais) |
+| `tempoParaLiberar` | tempo-meta (s): terminar a corrida abaixo dele libera a próxima fase da lista |
+| `pecas` | peças de tuning (`'turbo'`, `'pneus'` ou `'nitro'`) espalhadas pelo mapa |
 
 Campos com `?` no `TiposFase.ts` são opcionais: se não quiser rio, é só não escrever `rio`.
 

@@ -8,13 +8,14 @@ import { formatarTempo } from '../core/Corrida';
 import { lerRecorde } from '../core/Recordes';
 import { Garagem } from '../graphics/Garagem';
 import { MODELOS, type IdCarro } from '../world/assets';
-import { FASES, type IdFase } from '../world/levels';
+import { FASES, FASE_INICIAL } from '../world/levels';
+import { ORDEM_FASES, faseEstaLiberada } from '../core/Progresso';
 
 // =============================================================================
 // MENU PRINCIPAL
 // =============================================================================
 // Três telas, todas por cima da garagem 3D (ver Estados.ts):
-//  - menu:          Jogar, fase, qualidade e créditos;
+//  - menu:          Jogar, qualidade e créditos, e o andamento da viagem;
 //  - selecaoCarro:  a garagem, escolhendo o carro com ◀ ▶;
 //  - creditos:      a tabela do CREDITOS.md.
 //
@@ -24,9 +25,8 @@ import { FASES, type IdFase } from '../world/levels';
 // =============================================================================
 
 const CARROS: readonly IdCarro[] = ['carro1', 'carro2', 'carro3'];
-const IDS_FASES = Object.keys(FASES) as IdFase[];
 const NIVEIS: readonly NivelQualidade[] = ['baixo', 'medio', 'alto'];
-const OPCOES = ['jogar', 'fase', 'qualidade', 'creditos'] as const;
+const OPCOES = ['jogar', 'qualidade', 'creditos'] as const;
 type Opcao = (typeof OPCOES)[number];
 
 export class MenuPrincipal {
@@ -102,14 +102,9 @@ export class MenuPrincipal {
       case 'jogar':
         this.irPara('selecaoCarro');
         break;
-      case 'fase':
       case 'qualidade':
         this.opcao = acao;
         this.mudarValor(1);
-        break;
-      case 'fase-anterior':
-        this.opcao = 'fase';
-        this.mudarValor(-1);
         break;
       case 'qualidade-anterior':
         this.opcao = 'qualidade';
@@ -127,7 +122,9 @@ export class MenuPrincipal {
       }
       case 'correr':
         this.raiz.innerHTML = '<div class="menu-carregando">Carregando a fase…</div>';
-        irParaFase(this.escolhas.fase);
+        // A viagem começa sempre em Foz; as outras fases se alcançam dirigindo
+        // (marcador "seguir viagem", depois de bater o tempo-meta).
+        irParaFase(FASE_INICIAL);
         break;
       case 'voltar':
         this.irPara('menu');
@@ -147,12 +144,9 @@ export class MenuPrincipal {
     this.desenhar();
   }
 
-  /** ◀ ▶ na linha de fase ou de qualidade: passa para a anterior/próxima. */
+  /** ◀ ▶ na linha de qualidade: passa para a anterior/próxima. */
   private mudarValor(passo: number): void {
-    if (this.opcao === 'fase') {
-      const i = IDS_FASES.indexOf(this.escolhas.fase) + passo;
-      this.escolher({ fase: IDS_FASES[(i + IDS_FASES.length) % IDS_FASES.length] });
-    } else if (this.opcao === 'qualidade') {
+    if (this.opcao === 'qualidade') {
       const i = NIVEIS.indexOf(this.escolhas.qualidade) + passo;
       this.escolher({ qualidade: NIVEIS[(i + NIVEIS.length) % NIVEIS.length] });
     }
@@ -173,8 +167,6 @@ export class MenuPrincipal {
   }
 
   private htmlMenu(): string {
-    const fase = FASES[this.escolhas.fase];
-    const recorde = lerRecorde(this.escolhas.fase);
     const linha = (opcao: Opcao, conteudo: string): string =>
       `<div class="menu-opcao ${this.opcao === opcao ? 'ativa' : ''}" data-acao="${opcao}">${conteudo}</div>`;
     const seletor = (opcao: Opcao, rotulo: string, valor: string, detalhe: string): string =>
@@ -189,7 +181,7 @@ export class MenuPrincipal {
         <div class="menu-titulo">ROTA SUL</div>
         <div class="menu-subtitulo">Foz do Iguaçu → Navegantes</div>
         ${linha('jogar', '<span class="menu-jogar">JOGAR</span>')}
-        ${seletor('fase', 'Fase', fase.nome, `${fase.local} · Recorde: ${recorde === null ? '—' : formatarTempo(recorde)}`)}
+        ${htmlViagem()}
         ${seletor('qualidade', 'Qualidade', QUALIDADES[this.escolhas.qualidade].nome, 'Baixo: notebook com vídeo integrado')}
         ${linha('creditos', 'Créditos')}
         <div class="menu-dica"><kbd>↑</kbd><kbd>↓</kbd> escolher · <kbd>←</kbd><kbd>→</kbd> mudar · <kbd>Enter</kbd> confirmar · 🎮 também funciona</div>
@@ -201,7 +193,7 @@ export class MenuPrincipal {
     const numero = CARROS.indexOf(this.escolhas.carro) + 1;
     return `
       <div class="menu-garagem">
-        <div class="menu-garagem-topo">GARAGEM · ${FASES[this.escolhas.fase].nome}</div>
+        <div class="menu-garagem-topo">GARAGEM</div>
         <div class="menu-garagem-carro">
           <b class="menu-seta" data-acao="carro-anterior">◀</b>
           <div><div class="menu-garagem-numero">CARRO ${numero} DE ${CARROS.length}</div><div class="menu-garagem-nome">${nome}</div></div>
@@ -227,6 +219,21 @@ export class MenuPrincipal {
         <div class="menu-botoes"><button data-acao="voltar">Voltar <kbd>Esc</kbd></button></div>
       </div>`;
   }
+}
+
+/**
+ * O andamento da viagem: cada fase na ordem, com o recorde (se já correu)
+ * ou um cadeado (se ainda não foi liberada).
+ */
+function htmlViagem(): string {
+  const etapas = ORDEM_FASES.map((id) => {
+    const fase = FASES[id];
+    if (!faseEstaLiberada(id)) return `<span class="menu-viagem-fase trancada">🔒 ${fase.nome}</span>`;
+    const recorde = lerRecorde(fase.id);
+    const tempo = recorde === null ? '' : `<small>${formatarTempo(recorde)}</small>`;
+    return `<span class="menu-viagem-fase">${fase.nome}${tempo}</span>`;
+  });
+  return `<div class="menu-viagem">${etapas.join('<span class="menu-viagem-seta">→</span>')}</div>`;
 }
 
 /**

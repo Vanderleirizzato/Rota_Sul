@@ -2,6 +2,7 @@ import GUI from 'lil-gui';
 import { tuning } from '../config/tuning';
 import { QUALIDADES, type NivelQualidade } from '../config/quality';
 import { aplicarSuperVelocidade, restaurarTuning } from '../core/ModoDev';
+import { aplicarBonusDeTodasAsPecas } from '../core/Progresso';
 
 // Painel do Modo Dev: mexe nos valores de tuning.ts com o jogo rodando.
 //
@@ -75,7 +76,11 @@ export class PainelDev {
       }
     }
     this.gui.add({ super: () => this.trocarValores(aplicarSuperVelocidade) }, 'super').name('🚀 Preset: super velocidade');
-    this.gui.add({ normal: () => this.trocarValores(restaurarTuning) }, 'normal').name('↩ Voltar ao tuning original');
+    this.gui.add({ normal: () => this.trocarValores(() => {
+      restaurarTuning();
+      // "Original" apaga também os bônus das peças: devolve os que o jogador já ganhou.
+      aplicarBonusDeTodasAsPecas();
+    }) }, 'normal').name('↩ Voltar ao tuning original');
     this.gui.add({ copiar: () => this.copiarValores() }, 'copiar').name('📋 Copiar valores');
     this.gui.hide();
   }

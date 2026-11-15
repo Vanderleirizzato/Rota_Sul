@@ -71,6 +71,11 @@ export function criarPistaTeste(cena: Scene, fisica: MundoFisico): Cenario {
     reiniciar() {},
     areaLivre: () => true, // plano aberto: dá para andar em qualquer lugar
     nivelMar: null,
+    naAgua: () => false,
+    tempoParaLiberar: null,
+    totalPecas: 0,
+    colherPeca: () => null,
+    alturaChao: () => null,
     aplicarQualidade() {}, // nada pesado aqui
   };
 }

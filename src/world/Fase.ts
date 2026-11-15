@@ -21,6 +21,9 @@ import { colocarOutdoors } from './Outdoors';
 import { colocarPortico } from './Portico';
 import { Insetos } from './Insetos';
 import { Trofeu } from './Trofeu';
+import { colocarLimites } from './LimitesMundo';
+import { Pecas } from './Pecas';
+import { tuning } from '../config/tuning';
 
 /** O carro nasce este tanto (m) antes da linha de largada. */
 const RECUO_LARGADA = 6;
@@ -37,6 +40,10 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   construirPista(cena, fisica, tracado, dados.largada, dados.chegada);
   const patios = dados.patios ?? [];
   const terreno = new Terreno(cena, fisica, tracado, BIOMAS[dados.bioma], { rio: dados.rio, mar: dados.mar, patios });
+  // No passeio o mapa é livre: paredes invisíveis na borda seguram o carro.
+  colocarLimites(fisica, terreno);
+  // Onde tem água: o rio e/ou o mar (cada um com a altura da sua superfície).
+  const niveisAgua = [dados.rio?.nivel, dados.mar?.nivel].filter((n): n is number => n !== undefined);
   const rio = dados.rio ? new Rio(cena, fisica, tracado, dados.rio) : null;
   const mar = dados.mar ? new Mar(cena, tracado, dados.mar) : null;
   const plateia = new Plateia(cena, fisica, tracado, dados.plateia);
@@ -47,6 +54,7 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   if (dados.portico) colocarPortico(cena, fisica, tracado, dados.portico);
   const insetos = dados.insetos ? new Insetos(cena, tracado, terreno, dados.insetos) : null;
   const trofeu = dados.trofeu ? new Trofeu(cena, tracado, terreno, dados.trofeu) : null;
+  const pecas = new Pecas(cena, tracado, terreno, dados.id, dados.pecas ?? []);
 
   // Tudo que depende de baixar arquivos .glb roda em paralelo.
   const [vegetacao, , postes] = await Promise.all([
@@ -78,6 +86,11 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     luz: dados.iluminacao,
     nivelMar: dados.mar?.nivel ?? null,
     areaLivre: (distancia, lateral, fora) => dentroDePatio(patios, distancia, lateral, fora),
+    // Na água = o chão ali está abaixo da superfície E o carro desceu até ela.
+    // (Em cima da ponte o chão está abaixo da água, mas o carro está lá no alto.)
+    naAgua: (p) =>
+      niveisAgua.some((nivel) => terreno.alturaEm(p.x, p.z) < nivel && p.y < nivel + tuning.reposicionamento.alturaNoMar),
+    alturaChao: (x, z) => terreno.alturaEm(x, z),
     atualizar(dt, camera, alturaEmPixels, posicaoCarro, alfa) {
       mar?.atualizar(dt);
       trafego?.atualizar(dt, posicaoCarro, alfa);
@@ -86,6 +99,7 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       andarilhos?.atualizar(dt, camera.position, carro);
       insetos?.atualizar(dt, carro);
       trofeu?.atualizar(dt, carro);
+      pecas.atualizar(dt, carro);
       rio?.atualizar(dt);
       rio?.ajustarEscala(camera, alturaEmPixels);
       plateia.atualizar(dt, camera.position);
@@ -103,6 +117,9 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       metal: postes.colherImpacto(),
     }),
     pegouTrofeu: () => trofeu?.pegou() ?? false,
+    tempoParaLiberar: dados.tempoParaLiberar ?? null,
+    totalPecas: pecas.total,
+    colherPeca: () => pecas.colher(),
     reiniciar() {
       trofeu?.reiniciar();
       soltos.reiniciar();

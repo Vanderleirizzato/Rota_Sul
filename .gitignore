@@ -4,5 +4,6 @@ dist
 
 # Foto pessoal do outdoor "Moda Verão 2027": o repositório é público.
 # Para versionar mesmo assim, apague a linha abaixo.
-public/models/outdoor/outdoor_Moda_Ver*
+# (Nome sem acento: o servidor da Hostinger troca os acentos dos nomes de arquivo.)
+public/models/outdoor/moda-verao-2027.jpg
 dist.zip

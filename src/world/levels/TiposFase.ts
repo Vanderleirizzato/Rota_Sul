@@ -192,6 +192,31 @@ export interface DadosFase {
   insetos?: TravessiaInsetos;
   /** O troféu que libera o Modo Dev (escondido em algum lugar da fase). */
   trofeu?: TrofeuFase;
+
+  // --- progressão (Etapa 8) --------------------------------------------------
+  /**
+   * Tempo-meta (s): terminar a corrida abaixo dele libera a PRÓXIMA fase da
+   * lista (levels/index.ts). Sem este campo, a fase não libera nada.
+   * Mais alto: mais fácil seguir viagem. Calibre dirigindo: uma volta "boa,
+   * mas não perfeita" deve ficar um pouco abaixo.
+   */
+  tempoParaLiberar?: number;
+  /** Peças de tuning espalhadas pelo mapa: cada uma dá um bônus pequeno e permanente ao carro. */
+  pecas?: PecaFase[];
+}
+
+/** Os tipos de peça; o bônus de cada um fica em tuning.pecas. */
+export type TipoPeca = 'turbo' | 'pneus' | 'nitro';
+
+/**
+ * Uma peça de tuning, flutuando no mapa. Algumas no caminho da corrida
+ * (afastamento pequeno), outras escondidas (longe da pista).
+ */
+export interface PecaFase {
+  tipo: TipoPeca;
+  distancia: number;
+  lado: Lado;
+  afastamento: number;
 }
 
 /** As artes que existem para os outdoors. */

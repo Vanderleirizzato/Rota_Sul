@@ -20,8 +20,19 @@ import { Hud } from '../ui/Hud';
 import { PainelDev } from '../ui/PainelDev';
 import { VerColisores } from '../graphics/VerColisores';
 import { TelaPausa } from '../ui/TelaPausa';
-import { HudCorrida } from '../ui/HudCorrida';
-import { TelaFimFase } from '../ui/TelaFimFase';
+import { HudCorrida, type Convite, type InfoMarcador } from '../ui/HudCorrida';
+import { COR_VIAGEM, MarcadorMissao } from '../graphics/MarcadorMissao';
+import { TelaFimFase, type SituacaoViagem } from '../ui/TelaFimFase';
+import { DESCRICAO_PECA } from '../world/Pecas';
+import {
+  aplicarBonusDeTodasAsPecas,
+  aplicarBonusPeca,
+  faseEstaLiberada,
+  liberarFase,
+  pecasDaFase,
+  proximaFase,
+} from './Progresso';
+import { formatarTempo } from './Corrida';
 import { QUALIDADES, type NivelQualidade } from '../config/quality';
 import { tuning } from '../config/tuning';
 import { AudioCarro } from './AudioCarro';
@@ -44,6 +55,8 @@ interface Carro {
 
 /** Altura acima do asfalto ao reposicionar (m): o carro "cai" de leve e assenta. */
 const ALTURA_REPOSICIONAR = 1;
+/** O marcador "seguir viagem" fica este tanto (m) depois da linha de chegada. */
+const DEPOIS_DA_CHEGADA = 30;
 
 /**
  * Junta todas as peças e roda o laço principal.
@@ -74,6 +87,17 @@ export class Jogo {
   /** Só existe nas fases com chegada (a pista de teste não tem corrida). */
   private corrida: Corrida | null = null;
   private hudCorrida: HudCorrida | null = null;
+  /** A coluna de luz onde a corrida começa (só no passeio). */
+  private marcador: MarcadorMissao | null = null;
+  private posicaoMarcador = new Vector3();
+  /** Onde está o marcador em relação ao carro (recalculado a cada quadro). */
+  private readonly infoMarcador: InfoMarcador = { distancia: Infinity, direcao: 0, dentro: false, rapido: false };
+  /** O marcador "seguir viagem", depois da chegada: só existe com a próxima fase liberada. */
+  private marcadorViagem: MarcadorMissao | null = null;
+  private readonly posicaoViagem = new Vector3();
+  private readonly infoViagem: InfoMarcador = { distancia: Infinity, direcao: 0, dentro: false, rapido: false };
+  /** Melhor tempo desta fase (para o convite do marcador). */
+  private recorde: number | null = null;
   /** Última amostra da pista onde o carro estava (acelera a busca do próximo quadro). */
   private indiceNaPista: number | undefined;
   private distanciaNaPista = 0;
@@ -94,7 +118,10 @@ export class Jogo {
   private readonly posDesenho = new Vector3();
   private readonly rotDesenho = new Quaternion();
 
-  private constructor(luz: ConfigLuz, idFase: IdFase | 'teste') {
+  private constructor(
+    luz: ConfigLuz,
+    private readonly idFase: IdFase | 'teste',
+  ) {
     this.renderizador = criarRenderizador();
     this.camera = new CameraPerseguicao(window.innerWidth / window.innerHeight);
     this.iluminacao = new Iluminacao(this.cena, luz);
@@ -135,7 +162,12 @@ export class Jogo {
    */
   static async criar(aoCompilar?: () => void): Promise<Jogo> {
     const pedida = new URLSearchParams(window.location.search).get('fase');
-    const idFase: IdFase | 'teste' = pedida === 'teste' ? 'teste' : pedida && pedida in FASES ? (pedida as IdFase) : FASE_INICIAL;
+    let idFase: IdFase | 'teste' = pedida === 'teste' ? 'teste' : pedida && pedida in FASES ? (pedida as IdFase) : FASE_INICIAL;
+    // Fase trancada não abre pelo endereço (?fase=fase2): volta para o começo
+    // da viagem. No `npm run dev` abre qualquer uma, para testar.
+    if (idFase !== 'teste' && !import.meta.env.DEV && !faseEstaLiberada(idFase)) idFase = FASE_INICIAL;
+    // Os bônus das peças de tuning já coletadas (em qualquer fase) valem desde a largada.
+    aplicarBonusDeTodasAsPecas();
     // A luz precisa existir antes da cena; o resto da fase vem depois.
     const jogo = new Jogo(idFase === 'teste' ? LUZ_PADRAO : FASES[idFase].iluminacao, idFase);
     jogo.cenario = idFase === 'teste' ? criarPistaTeste(jogo.cena, jogo.fisica) : await construirFase(FASES[idFase], jogo.cena, jogo.fisica);
@@ -144,8 +176,15 @@ export class Jogo {
     // O carro escolhido na garagem do menu.
     jogo.carro = await jogo.criarCarro(lerEscolhas().carro, largada.posicao, largada.angulo);
     if (jogo.cenario.chegada !== null) {
+      // O jogo começa passeando; a corrida começa no marcador, na largada.
       jogo.corrida = new Corrida(jogo.cenario.chegada);
       jogo.hudCorrida = new HudCorrida(jogo.cenario.nome, jogo.cenario.local, lerRecorde(jogo.cenario.id));
+      // A largada guarda onde o carro "nasce" (um pouco acima do asfalto); o marcador fica no chão.
+      jogo.posicaoMarcador = largada.posicao.clone().setY(largada.posicao.y - ALTURA_REPOSICIONAR);
+      jogo.marcador = new MarcadorMissao(jogo.cena, jogo.posicaoMarcador, tuning.corrida.raioMarcador);
+      jogo.recorde = lerRecorde(jogo.cenario.id);
+      jogo.hudCorrida.mostrarPecas(pecasDaFase(jogo.cenario.id), jogo.cenario.totalPecas);
+      if (jogo.proxima && faseEstaLiberada(jogo.proxima)) jogo.criarMarcadorViagem();
     }
     // Compila agora os "programas" de todos os materiais da fase. Sem isso, o
     // navegador compila cada um na 1ª vez que o objeto aparece na tela, e o
@@ -208,7 +247,12 @@ export class Jogo {
     this.tocarBatidas(dt);
     if (this.cenario.pegouTrofeu()) this.liberarModoDev();
 
-    if (fisico.precisaReposicionar) this.reposicionar();
+    // Capotou: na corrida, volta para a pista; no passeio, só desvira ali
+    // mesmo (o jogador pode estar longe da estrada de propósito).
+    if (fisico.precisaReposicionar) {
+      if (this.passeando) this.desvirar();
+      else this.reposicionar();
+    }
 
     // Interpolação: desenha o carro entre o passo anterior e o atual.
     this.posDesenho.lerpVectors(fisico.posicaoAnterior, fisico.posicaoAtual, alfa);
@@ -233,6 +277,7 @@ export class Jogo {
     this.iluminacao.seguir(this.posDesenho);
     this.ceu.atualizar(this.camera.camera.position, this.tempoTotal);
     this.cenario.atualizar(dt, this.camera.camera, this.renderizador.domElement.height, this.posDesenho, alfa);
+    this.verPecas();
     this.atualizarCorrida(dt);
     this.hud.atualizar({
       velocidadeMs: fisico.velocidade,
@@ -297,17 +342,30 @@ export class Jogo {
         this.reiniciarCorrida();
         this.definirPausa(false);
       }
+      if (t.apertou('abandonar') && this.corrida?.emProva) {
+        this.corrida.voltarAoPasseio();
+        this.definirPausa(false);
+      }
       return;
     }
     if (this.corrida?.estado === 'chegou') {
-      // Fim de fase: Enter vai para a próxima (ou para o menu, depois da
-      // última); M volta ao menu; T corre esta fase de novo (logo abaixo).
+      // Fim de fase: Enter volta a passear; N segue para a próxima fase;
+      // M volta ao menu; T corre esta fase de novo (logo abaixo).
       if (t.apertou('confirmar')) {
-        const proxima = this.proximaFase();
-        if (proxima) irParaFase(proxima);
-        else irParaMenu();
+        this.telaFim.esconder();
+        this.corrida.voltarAoPasseio();
       }
+      // N só segue viagem com a próxima fase liberada (tempo-meta batido).
+      const proxima = this.proxima;
+      if (t.apertou('proximaFase') && proxima && faseEstaLiberada(proxima)) irParaFase(proxima);
       if (t.apertou('menu')) irParaMenu();
+    } else if (this.passeando && t.apertou('confirmar')) {
+      // Dentro de um marcador e devagar: viaja ou começa a corrida.
+      const proxima = this.proxima;
+      const v = this.infoViagem;
+      const m = this.infoMarcador;
+      if (this.marcadorViagem && proxima && v.dentro && !v.rapido) irParaFase(proxima);
+      else if (m.dentro && !m.rapido) this.reiniciarCorrida();
     }
     if (t.apertou('trocarCamera')) this.camera.proximoModo();
     if (t.apertou('reposicionar')) this.reposicionar();
@@ -321,9 +379,16 @@ export class Jogo {
   // Corrida e pista
   // ---------------------------------------------------------------------------
 
+  /** Passeando (sem cronômetro, mapa livre)? A pista de teste, sem corrida, conta como passeio. */
+  private get passeando(): boolean {
+    return (this.corrida?.estado ?? 'passeio') === 'passeio';
+  }
+
   /**
    * Onde o carro está na pista? Serve para o cronômetro (cruzou a chegada?) e
    * para devolver à estrada quem saiu dela ou caiu da ponte.
+   * No passeio, sair da pista é permitido: só volta quem caiu na água ou
+   * atravessou o chão.
    */
   private acompanharPista(dt: number): void {
     const tracado = this.cenario.tracado;
@@ -339,12 +404,22 @@ export class Jogo {
     const livre = this.cenario.areaLivre(proj.distancia, proj.lateral, depoisDaBeira);
     this.carro.fisico.naGrama = depoisDaBeira > 0 && !livre;
     const r = tuning.reposicionamento;
-    const fora = !livre && depoisDaBeira > r.distanciaForaPista;
-    const nivelMar = this.cenario.nivelMar;
-    const caiu =
-      posicao.y < tracado.alturaSuperficie(proj.indice, 0) - r.quedaAbaixoPista ||
-      // Entrou no mar: volta na hora (carro não nada).
-      (nivelMar !== null && posicao.y < nivelMar + r.alturaNoMar);
+    let fora: boolean;
+    let caiu: boolean;
+    if (this.passeando) {
+      // Longe da pista o carro pode estar num morro bem acima (ou num vale
+      // abaixo) do asfalto: por isso aqui comparamos com o CHÃO, não com a pista.
+      fora = false;
+      const chao = this.cenario.alturaChao(posicao.x, posicao.z);
+      caiu = this.cenario.naAgua(posicao) || (chao !== null && posicao.y < chao - tuning.passeio.abaixoDoChao);
+    } else {
+      fora = !livre && depoisDaBeira > r.distanciaForaPista;
+      const nivelMar = this.cenario.nivelMar;
+      caiu =
+        posicao.y < tracado.alturaSuperficie(proj.indice, 0) - r.quedaAbaixoPista ||
+        // Entrou no mar: volta na hora (carro não nada).
+        (nivelMar !== null && posicao.y < nivelMar + r.alturaNoMar);
+    }
     this.tempoForaDaPista = fora ? this.tempoForaDaPista + dt : 0;
     if (caiu || this.tempoForaDaPista > r.tempoForaPista) this.reposicionar();
   }
@@ -361,17 +436,109 @@ export class Jogo {
   private atualizarCorrida(dt: number): void {
     const corrida = this.corrida;
     if (!corrida) return;
+    const passeando = corrida.estado === 'passeio';
+    this.marcador?.mostrar(passeando);
+    this.marcador?.atualizar(dt, this.infoMarcador.dentro);
+    this.marcadorViagem?.mostrar(passeando);
+    this.marcadorViagem?.atualizar(dt, this.infoViagem.dentro);
+    if (passeando) this.atualizarMarcadores();
     const evento = corrida.atualizar(dt, this.distanciaNaPista);
     if (evento?.tipo === 'numero') this.audio.bip(false);
     if (evento?.tipo === 'largou') this.audio.bip(true);
-    if (evento?.tipo === 'chegou') {
-      const recordeNovo = registrarTempo(this.cenario.id, evento.tempo);
-      const recorde = lerRecorde(this.cenario.id);
-      const proxima = this.proximaFase();
-      this.telaFim.mostrar(this.cenario.nome, evento.tempo, recorde, recordeNovo, proxima ? FASES[proxima].nome : null);
-      if (recorde !== null) this.hudCorrida?.mostrarRecorde(recorde);
+    if (evento?.tipo === 'chegou') this.chegou(evento.tempo);
+    this.hudCorrida?.atualizar(dt, corrida.estado, corrida.tempo, corrida.restante);
+  }
+
+  /** Cruzou a chegada: recorde, tempo-meta (libera a próxima fase?) e a tela de fim. */
+  private chegou(tempo: number): void {
+    const recordeNovo = registrarTempo(this.cenario.id, tempo);
+    this.recorde = lerRecorde(this.cenario.id);
+    if (this.recorde !== null) this.hudCorrida?.mostrarRecorde(this.recorde);
+
+    const proxima = this.proxima;
+    let viagem: SituacaoViagem | null = null;
+    if (proxima) {
+      const meta = this.cenario.tempoParaLiberar;
+      const bateuMeta = meta !== null && tempo <= meta;
+      const acabouDeLiberar = bateuMeta && liberarFase(FASES[proxima].id);
+      if (acabouDeLiberar) {
+        this.criarMarcadorViagem();
+        this.audio.bip(true);
+      }
+      viagem = { proxima: FASES[proxima].nome, liberada: faseEstaLiberada(proxima), acabouDeLiberar, meta };
     }
-    this.hudCorrida?.atualizar(corrida.estado, corrida.tempo, corrida.restante);
+    this.telaFim.mostrar(this.cenario.nome, tempo, this.recorde, recordeNovo, viagem);
+  }
+
+  /** Bússola e convites: onde estão os marcadores e se o carro está dentro de algum. */
+  private atualizarMarcadores(): void {
+    this.medirMarcador(this.posicaoMarcador, this.infoMarcador);
+    this.hudCorrida?.mostrarBussola(this.infoMarcador);
+    if (this.marcadorViagem) this.medirMarcador(this.posicaoViagem, this.infoViagem);
+    this.hudCorrida?.mostrarConvite(this.conviteAtual());
+  }
+
+  /** O convite do marcador onde o carro está (ou null, fora de todos). */
+  private conviteAtual(): Convite | null {
+    const proxima = this.proxima;
+    const v = this.infoViagem;
+    if (this.marcadorViagem && v.dentro && proxima) {
+      return {
+        rotulo: '🧭 SEGUIR VIAGEM',
+        nome: FASES[proxima].nome,
+        detalhe: FASES[proxima].local,
+        acao: v.rapido ? 'Pare no marcador para viajar' : '<kbd>Enter</kbd> viajar &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
+      };
+    }
+    const m = this.infoMarcador;
+    if (!m.dentro) return null;
+    const meta = this.cenario.tempoParaLiberar;
+    const linhaMeta =
+      proxima && meta !== null && !faseEstaLiberada(proxima)
+        ? ` · Meta para liberar ${FASES[proxima].nome}: <b>${formatarTempo(meta)}</b>`
+        : '';
+    return {
+      rotulo: '🏁 CORRIDA',
+      nome: this.cenario.nome,
+      detalhe: (this.recorde === null ? 'Sem recorde ainda' : `Recorde: ${formatarTempo(this.recorde)}`) + linhaMeta,
+      acao: m.rapido ? 'Pare no marcador para correr' : '<kbd>Enter</kbd> correr &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
+    };
+  }
+
+  /** Distância e direção de um marcador visto do carro. */
+  private medirMarcador(posicao: Vector3, m: InfoMarcador): void {
+    const f = this.carro.fisico;
+    const dx = posicao.x - f.posicaoAtual.x;
+    const dz = posicao.z - f.posicaoAtual.z;
+    m.distancia = Math.hypot(dx, dz);
+    // Os dois ângulos contam a partir do +Z, girando para o +X (que, olhando
+    // para +Z, fica à ESQUERDA). Na tela, girar positivo é para a direita:
+    // por isso o sinal de menos.
+    let relativo = Math.atan2(dx, dz) - f.anguloHorizontal;
+    relativo = Math.atan2(Math.sin(relativo), Math.cos(relativo)); // volta para -π..π
+    m.direcao = -relativo;
+    m.dentro = m.distancia < tuning.corrida.raioMarcador;
+    m.rapido = Math.abs(f.velocidade) * 3.6 > tuning.corrida.velocidadeParaComecarKmh;
+  }
+
+  /** O marcador "seguir viagem" fica logo depois da linha de chegada. */
+  private criarMarcadorViagem(): void {
+    const tracado = this.cenario.tracado;
+    const chegada = this.cenario.chegada;
+    if (this.marcadorViagem || !tracado || chegada === null) return;
+    this.posicaoViagem.copy(tracado.pontoAoLado(chegada + DEPOIS_DA_CHEGADA, 'centro', 0));
+    this.marcadorViagem = new MarcadorMissao(this.cena, this.posicaoViagem, tuning.corrida.raioMarcador, COR_VIAGEM);
+  }
+
+  /** Pegou uma peça de tuning? Bônus no carro, aviso na tela e um "plim". */
+  private verPecas(): void {
+    const peca = this.cenario.colherPeca();
+    if (!peca) return;
+    aplicarBonusPeca(peca.tipo);
+    const d = DESCRICAO_PECA[peca.tipo];
+    this.hudCorrida?.avisar(`🔧 <b>${d.nome}</b> encontrado! <small>${d.efeito} · ${peca.coletadas}/${peca.total} peças</small>`);
+    this.hudCorrida?.mostrarPecas(peca.coletadas, peca.total);
+    this.audio.bip(true);
   }
 
   /** Encostou no troféu: libera o painel (para sempre) e liga a super velocidade. */
@@ -382,21 +549,19 @@ export class Jogo {
     this.audio.bip(true);
   }
 
-  /** A fase seguinte na ordem da viagem (lista FASES), ou null se esta é a última. */
-  private proximaFase(): IdFase | null {
-    const ids = Object.keys(FASES) as IdFase[];
-    const i = ids.indexOf(this.cenario.id as IdFase);
-    return i >= 0 && i + 1 < ids.length ? ids[i + 1] : null;
+  /** A fase seguinte na ordem da viagem (lista FASES), ou null se esta é a última (ou na pista de teste). */
+  private get proxima(): IdFase | null {
+    return this.idFase === 'teste' ? null : proximaFase(this.idFase);
   }
 
-  /** Volta para a largada e começa a contagem de novo. */
+  /** Vai para a largada e começa a contagem (vale para a 1ª vez e para "de novo"). */
   private reiniciarCorrida(): void {
     const { posicao, angulo } = this.cenario.largada;
     this.carro.fisico.reposicionar(posicao.clone(), angulo);
     this.camera.reiniciar();
     this.indiceNaPista = undefined;
     this.telaFim.esconder();
-    this.corrida?.reiniciar();
+    this.corrida?.comecar();
     this.cenario.reiniciar();
     // Corrida nova, tanque cheio: senão o nitro gasto na anterior faria falta.
     this.carro.fisico.nitro = 1;
@@ -404,7 +569,7 @@ export class Jogo {
 
   private definirPausa(pausado: boolean): void {
     this.pausado = pausado;
-    this.telaPausa.mostrar(pausado);
+    this.telaPausa.mostrar(pausado, this.corrida?.emProva ?? false);
     if (pausado) this.audio.pausar();
     else this.audio.retomar();
   }
@@ -442,6 +607,16 @@ export class Jogo {
       f.reposicionar(posicao, caiu ? largada.angulo : f.anguloHorizontal);
     }
     this.tempoForaDaPista = 0;
+    this.camera.reiniciar();
+  }
+
+  /** Capotou no passeio: põe o carro de pé no mesmo lugar, apontando para onde estava. */
+  private desvirar(): void {
+    const f = this.carro.fisico;
+    const posicao = f.posicaoAtual.clone();
+    const chao = this.cenario.alturaChao(posicao.x, posicao.z);
+    posicao.y = Math.max(posicao.y, chao ?? posicao.y) + ALTURA_REPOSICIONAR;
+    f.reposicionar(posicao, f.anguloHorizontal);
     this.camera.reiniciar();
   }
 
