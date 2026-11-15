@@ -22,13 +22,16 @@ import { VerColisores } from '../graphics/VerColisores';
 import { TelaPausa } from '../ui/TelaPausa';
 import { HudCorrida } from '../ui/HudCorrida';
 import { TelaFimFase } from '../ui/TelaFimFase';
-import { QUALIDADES, QUALIDADE_PADRAO, type NivelQualidade } from '../config/quality';
+import { QUALIDADES, type NivelQualidade } from '../config/quality';
 import { tuning } from '../config/tuning';
 import { AudioCarro } from './AudioCarro';
 import { Corrida } from './Corrida';
 import { lerRecorde, registrarTempo } from './Recordes';
 import { LoopFixo } from './LoopFixo';
-import { Teclado } from './Teclado';
+import { Entrada } from './Entrada';
+import { lerEscolhas, salvarEscolhas } from './Escolhas';
+import { irParaFase, irParaMenu } from './Estados';
+import { colocarPlaca } from '../graphics/Placa';
 
 /** O carro do jogador: física e visual andam juntos. */
 interface Carro {
@@ -49,7 +52,8 @@ export class Jogo {
   private readonly cena = new Scene();
   private readonly fisica = new MundoFisico();
   private readonly loop = new LoopFixo(PASSO_FISICA);
-  private readonly teclado = new Teclado();
+  /** Teclado e controle de videogame juntos. */
+  private readonly entrada = new Entrada();
   private readonly camera: CameraPerseguicao;
   private readonly iluminacao: Iluminacao;
   private readonly ceu: Ceu;
@@ -71,7 +75,7 @@ export class Jogo {
   private indiceNaPista: number | undefined;
   private distanciaNaPista = 0;
   private tempoForaDaPista = 0;
-  private nivelQualidade: NivelQualidade = QUALIDADE_PADRAO;
+  private nivelQualidade: NivelQualidade = lerEscolhas().qualidade;
   private trocandoCarro = false;
   private pausado = false;
   private ultimoTempo = performance.now();
@@ -96,15 +100,19 @@ export class Jogo {
     this.efeitos = new EfeitosCarro(this.cena);
     this.painel = new PainelDev(
       () => this.carro.fisico.aplicarMassa(),
-      (nivel) => this.aplicarQualidade(nivel),
+      (nivel) => {
+        this.aplicarQualidade(nivel);
+        salvarEscolhas({ qualidade: nivel });
+      },
       (mostrar) => this.verColisores.ligar(mostrar),
       {
         ...Object.fromEntries(Object.entries(FASES).map(([id, f]) => [f.nome, id])),
         'Pista de teste': 'teste',
       },
       idFase,
+      this.nivelQualidade,
     );
-    this.aplicarQualidade(QUALIDADE_PADRAO);
+    this.aplicarQualidade(this.nivelQualidade);
 
     window.addEventListener('resize', () => this.aoRedimensionar());
     // Navegadores só deixam tocar som depois de um gesto do jogador.
@@ -129,7 +137,8 @@ export class Jogo {
     jogo.cenario = idFase === 'teste' ? criarPistaTeste(jogo.cena, jogo.fisica) : await construirFase(FASES[idFase], jogo.cena, jogo.fisica);
     jogo.cenario.aplicarQualidade(QUALIDADES[jogo.nivelQualidade]);
     const largada = jogo.cenario.largada;
-    jogo.carro = await jogo.criarCarro('carro1', largada.posicao, largada.angulo);
+    // O carro escolhido na garagem do menu.
+    jogo.carro = await jogo.criarCarro(lerEscolhas().carro, largada.posicao, largada.angulo);
     if (jogo.cenario.chegada !== null) {
       jogo.corrida = new Corrida(jogo.cenario.chegada);
       jogo.hudCorrida = new HudCorrida(jogo.cenario.nome, jogo.cenario.local, lerRecorde(jogo.cenario.id));
@@ -156,11 +165,12 @@ export class Jogo {
   private atualizar(dt: number): void {
     this.painel.contarQuadro();
     this.verColisores.atualizar();
+    this.entrada.comecoDoQuadro();
     this.tratarTeclasDeUmToque();
     if (this.pausado) {
       // Pausado: não avança a física, só continua desenhando a cena parada.
       this.posProcessamento.desenhar();
-      this.teclado.fimDoQuadro();
+      this.entrada.fimDoQuadro();
       return;
     }
     this.tempoTotal += dt;
@@ -230,7 +240,7 @@ export class Jogo {
     });
 
     this.posProcessamento.desenhar();
-    this.teclado.fimDoQuadro();
+    this.entrada.fimDoQuadro();
   }
 
   /** Som e tremor de câmera: batidas da lataria, cones (plástico), pessoas e postes. */
@@ -260,27 +270,44 @@ export class Jogo {
   }
 
   private lerComandos(): ComandosCarro {
-    const t = this.teclado;
+    const t = this.entrada;
     return {
       acelerar: t.segurando('acelerar'),
       frear: t.segurando('frear'),
-      direcao: (t.segurando('esquerda') ? 1 : 0) - (t.segurando('direita') ? 1 : 0),
+      direcao: t.direcao(),
       freioMao: t.segurando('freioMao'),
       nitro: t.segurando('nitro'),
     };
   }
 
   private tratarTeclasDeUmToque(): void {
-    const t = this.teclado;
+    const t = this.entrada;
     if (t.apertou('pausar')) this.definirPausa(!this.pausado);
     if (t.apertou('painelDev')) this.painel.alternar();
-    if (this.pausado) return;
+    if (this.pausado) {
+      if (t.apertou('menu')) irParaMenu();
+      if (t.apertou('reiniciar')) {
+        this.reiniciarCorrida();
+        this.definirPausa(false);
+      }
+      return;
+    }
+    if (this.corrida?.estado === 'chegou') {
+      // Fim de fase: Enter vai para a próxima (ou para o menu, depois da
+      // última); M volta ao menu; T corre esta fase de novo (logo abaixo).
+      if (t.apertou('confirmar')) {
+        const proxima = this.proximaFase();
+        if (proxima) irParaFase(proxima);
+        else irParaMenu();
+      }
+      if (t.apertou('menu')) irParaMenu();
+    }
     if (t.apertou('trocarCamera')) this.camera.proximoModo();
     if (t.apertou('reposicionar')) this.reposicionar();
     if (t.apertou('reiniciar')) this.reiniciarCorrida();
     if (t.apertou('carro1')) void this.trocarCarro('carro1');
     if (t.apertou('carro2')) void this.trocarCarro('carro2');
-    if (t.apertou('confirmar') && this.corrida?.estado === 'chegou') this.reiniciarCorrida();
+    if (t.apertou('carro3')) void this.trocarCarro('carro3');
   }
 
   // ---------------------------------------------------------------------------
@@ -333,10 +360,18 @@ export class Jogo {
     if (evento?.tipo === 'chegou') {
       const recordeNovo = registrarTempo(this.cenario.id, evento.tempo);
       const recorde = lerRecorde(this.cenario.id);
-      this.telaFim.mostrar(this.cenario.nome, evento.tempo, recorde, recordeNovo);
+      const proxima = this.proximaFase();
+      this.telaFim.mostrar(this.cenario.nome, evento.tempo, recorde, recordeNovo, proxima ? FASES[proxima].nome : null);
       if (recorde !== null) this.hudCorrida?.mostrarRecorde(recorde);
     }
     this.hudCorrida?.atualizar(corrida.estado, corrida.tempo, corrida.restante);
+  }
+
+  /** A fase seguinte na ordem da viagem (lista FASES), ou null se esta é a última. */
+  private proximaFase(): IdFase | null {
+    const ids = Object.keys(FASES) as IdFase[];
+    const i = ids.indexOf(this.cenario.id as IdFase);
+    return i >= 0 && i + 1 < ids.length ? ids[i + 1] : null;
   }
 
   /** Volta para a largada e começa a contagem de novo. */
@@ -398,6 +433,7 @@ export class Jogo {
   private async trocarCarro(id: IdCarro): Promise<void> {
     if (this.trocandoCarro || id === this.carro.id) return;
     this.trocandoCarro = true;
+    salvarEscolhas({ carro: id });
     try {
       const antigo = this.carro;
       const posicao = antigo.fisico.posicaoAtual.clone();
@@ -410,7 +446,7 @@ export class Jogo {
       console.error(`Não consegui trocar para o ${id}:`, erro);
     } finally {
       // "finally" roda com ou sem erro. Sem ele, um erro deixaria a trava
-      // ligada para sempre e as teclas 1/2 parariam de funcionar.
+      // ligada para sempre e as teclas 1/2/3 parariam de funcionar.
       this.trocandoCarro = false;
     }
   }
@@ -420,6 +456,7 @@ export class Jogo {
     if (!info.rodas) throw new Error(`O modelo ${id} não tem rodas no manifesto.`);
     const visual = new CarroVisual(await obterModelo(id), info.rodas);
     aplicarMateriaisCarro(visual.objeto, visual.malhasDasRodas());
+    colocarPlaca(visual, info.alturaPlaca ?? visual.geometria.raioRoda * 1.4);
     this.cena.add(visual.objeto);
     const fisico = new VeiculoFisico(this.fisica.mundo, visual.geometria, posicao, angulo);
     return { id, fisico, visual };

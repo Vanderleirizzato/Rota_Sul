@@ -103,7 +103,7 @@ export class Hud {
     this.cameraDesenhada = camera;
     this.dicas.innerHTML =
       `Câmera: ${camera} &nbsp;·&nbsp; <kbd>C</kbd> câmera &nbsp;<kbd>R</kbd> reposicionar &nbsp;<kbd>T</kbd> reiniciar &nbsp;` +
-      `<kbd>Esc</kbd> pausar &nbsp;<kbd>F2</kbd> tuning &nbsp;<kbd>1</kbd>/<kbd>2</kbd> carro`;
+      `<kbd>Esc</kbd> pausar &nbsp;<kbd>F2</kbd> tuning &nbsp;<kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> carro`;
   }
 
   /** Desenha o trilho, a faixa vermelha e os números (1, 2, 3... mil rpm). */

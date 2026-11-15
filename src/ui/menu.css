@@ -1,0 +1,108 @@
+/* Menu principal, garagem e créditos. As cores seguem o HUD:
+   azul-ciano (#33e1ff) para o que está escolhido e amarelo (#ffcc33) de destaque. */
+
+.menu {
+  position: fixed;
+  inset: 0;
+  user-select: none;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+  z-index: 5;
+}
+
+.menu kbd, .tela-pausa kbd {
+  display: inline-block;
+  padding: 0 6px;
+  margin: 0 2px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  font: 12px ui-monospace, Consolas, monospace;
+}
+
+/* --- Menu: painel à esquerda (o carro gira à direita) --- */
+.menu-painel {
+  position: absolute;
+  left: max(4vw, 24px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(440px, 90vw);
+}
+.menu-titulo {
+  font: 900 76px/1 ui-monospace, Consolas, monospace;
+  letter-spacing: 8px;
+  background: linear-gradient(180deg, #ffe680, #ffaa33);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 14px rgba(255, 170, 51, 0.35));
+}
+.menu-titulo.pequeno { font-size: 44px; }
+.menu-subtitulo { margin: 6px 0 32px; letter-spacing: 3px; opacity: 0.75; }
+
+.menu-opcao {
+  position: relative;
+  padding: 12px 18px;
+  margin: 6px 0;
+  border-left: 4px solid transparent;
+  background: rgba(10, 14, 22, 0.55);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.menu-opcao:hover { background: rgba(30, 40, 60, 0.7); }
+.menu-opcao.ativa { border-left-color: #33e1ff; background: rgba(20, 60, 80, 0.7); transform: translateX(8px); }
+.menu-jogar { font: 800 26px ui-monospace, Consolas, monospace; letter-spacing: 4px; color: #ffcc33; }
+.menu-rotulo { display: block; font-size: 12px; letter-spacing: 3px; opacity: 0.6; text-transform: uppercase; }
+.menu-valor { font-size: 20px; font-weight: 700; }
+.menu-valor b { color: #33e1ff; padding: 0 6px; }
+.menu-detalhe { display: block; font-size: 13px; opacity: 0.65; margin-top: 2px; }
+.menu-dica { margin-top: 26px; font-size: 13px; opacity: 0.7; line-height: 2; }
+
+/* --- Garagem: nome do carro embaixo, no meio --- */
+.menu-garagem {
+  text-shadow: 0 2px 10px #000;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6vh;
+  text-align: center;
+}
+.menu-garagem-topo { position: fixed; top: 4vh; left: 0; right: 0; letter-spacing: 6px; opacity: 0.7; }
+.menu-garagem-carro { display: flex; align-items: center; justify-content: center; gap: 36px; }
+.menu-garagem-numero { font-size: 13px; letter-spacing: 4px; opacity: 0.6; }
+.menu-garagem-nome { font: 900 42px ui-monospace, Consolas, monospace; letter-spacing: 3px; min-width: 9em; }
+.menu-seta { font-size: 40px; color: #33e1ff; cursor: pointer; padding: 0 12px; }
+.menu-seta:hover { color: #fff; }
+
+.menu-botoes { display: flex; gap: 14px; justify-content: center; margin-top: 22px; }
+.menu-botoes button {
+  padding: 10px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  background: rgba(10, 14, 22, 0.7);
+  color: #fff;
+  font: 600 16px system-ui, sans-serif;
+  cursor: pointer;
+}
+.menu-botoes button.principal { background: #ffcc33; border-color: #ffcc33; color: #111; }
+.menu-botoes button.principal kbd { border-color: rgba(0, 0, 0, 0.4); }
+.menu-botoes button:hover { filter: brightness(1.15); }
+
+/* --- Créditos --- */
+.menu-creditos {
+  position: absolute;
+  inset: 5vh 5vw;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(7, 9, 14, 0.88);
+  border-radius: 10px;
+}
+.menu-creditos p { margin: 8px 0; opacity: 0.85; }
+.menu-creditos-tabela { flex: 1; overflow: auto; margin: 10px 0; }
+.menu-creditos table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.menu-creditos th { position: sticky; top: 0; background: #0f141d; text-align: left; color: #33e1ff; }
+.menu-creditos th, .menu-creditos td { padding: 6px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.menu-creditos td:nth-child(2) { font-family: ui-monospace, Consolas, monospace; font-size: 12px; opacity: 0.7; }
+
+.menu-carregando { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.5rem; background: rgba(0, 0, 0, 0.7); }

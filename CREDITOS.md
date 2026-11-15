@@ -8,8 +8,9 @@ Os nomes no formato `"Nome by Autor - código.glb"` parecem vir do site [Poly Pi
 
 | Modelo | Arquivo | Autor | Licença |
 |---|---|---|---|
-| Carro 1 | `cars/Carro1.glb` | a preencher | a preencher |
-| Carro 2 | `cars/Carro2.glb` | a preencher | a preencher |
+| Carro 1 (esportivo) | `cars/CAR Model by Ignition Labs` | Ignition Labs | a preencher |
+| Carro 2 | `cars/Carro1.glb` | a preencher | a preencher |
+| Carro 3 | `cars/Carro2.glb` | a preencher | a preencher |
 | Ponte de treliça | `Bridge.fbx` (textura não veio junto; pintada de aço no código) | a preencher | a preencher |
 | Arco | `Arch by CreativeTrio` | CreativeTrio | a preencher |
 | Barreira simples | `Barrier Single by Quaternius` | Quaternius | CC0 (domínio público) |

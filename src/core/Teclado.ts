@@ -17,9 +17,17 @@ export const TECLAS = {
   trocarCamera: ['KeyC'],
   carro1: ['Digit1', 'Numpad1'],
   carro2: ['Digit2', 'Numpad2'],
+  carro3: ['Digit3', 'Numpad3'],
   painelDev: ['F2'],
   pausar: ['Escape'],
   confirmar: ['Enter', 'NumpadEnter'],
+  // Menus (a mesma tecla pode servir a duas ações: no menu, W sobe na lista;
+  // na corrida, acelera).
+  cima: ['ArrowUp', 'KeyW'],
+  baixo: ['ArrowDown', 'KeyS'],
+  voltar: ['Escape', 'Backspace'],
+  /** Na pausa e no fim de fase: volta ao menu principal. */
+  menu: ['KeyM'],
 } as const;
 
 export type Acao = keyof typeof TECLAS;

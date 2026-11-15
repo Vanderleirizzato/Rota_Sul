@@ -39,6 +39,10 @@ export interface InfoModelo {
   solido: boolean;
   /** Só para carros: onde estão as rodas no modelo. */
   rodas?: RodasDoModelo;
+  /** Só para carros: nome mostrado na garagem. */
+  nome?: string;
+  /** Só para carros: altura (m) do centro da placa traseira "ENZ-ADS". */
+  alturaPlaca?: number;
   /** Algo a conferir quando o modelo entrar no jogo. */
   observacao?: string;
   /** Pessoa que pode aparecer na plateia (largada e chegada). */
@@ -72,7 +76,29 @@ const C = `${M}city/`;
 
 export const MODELOS = {
   // ---------------------------------------------------------------- carros --
+  // Os carros do jogador (teclas 1, 2 e 3). Atenção: o id não é o nome do
+  // arquivo. O carro1 é o esportivo novo; o carro2 usa o Carro1.glb e o
+  // carro3 usa o Carro2.glb (a ordem mudou quando o esportivo chegou).
   carro1: {
+    nome: 'Esportivo',
+    alturaPlaca: 0.55,
+    arquivo: `${M}cars/CAR Model by Ignition Labs - 5zUWP5UsLg-.glb`,
+    medida: 'comprimento',
+    metros: 4.8,
+    rotacaoY: 0,
+    solido: true,
+    // Rodas já vêm separadas e com nome; a frente do modelo aponta para +Z.
+    rodas: {
+      dianteiraEsquerda: 'Lamborghini_Aventador_Wheel_FL',
+      dianteiraDireita: 'Lamborghini_Aventador_Wheel_FR',
+      traseiraEsquerda: 'Lamborghini_Aventador_Wheel_RL',
+      traseiraDireita: 'Lamborghini_Aventador_Wheel_RR',
+    },
+  },
+  carro2: {
+    nome: 'Jipe Aventureiro',
+    // Logo abaixo do estepe (mais alto, o estepe cobriria a placa).
+    alturaPlaca: 0.52,
     arquivo: `${M}cars/Carro1.glb`,
     medida: 'comprimento',
     metros: 4.6,
@@ -87,7 +113,9 @@ export const MODELOS = {
     },
     observacao: 'Lataria, pneus e estepe usam o mesmo material "Texture": cuidado ao aplicar clearcoat (Etapa 1B).',
   },
-  carro2: {
+  carro3: {
+    nome: 'Picape',
+    alturaPlaca: 0.62,
     arquivo: `${M}cars/Carro2.glb`,
     medida: 'comprimento',
     metros: 4.5,
@@ -184,4 +212,4 @@ export const MODELOS = {
 } as const satisfies Record<string, InfoModelo>;
 
 export type IdModelo = keyof typeof MODELOS;
-export type IdCarro = 'carro1' | 'carro2';
+export type IdCarro = 'carro1' | 'carro2' | 'carro3';

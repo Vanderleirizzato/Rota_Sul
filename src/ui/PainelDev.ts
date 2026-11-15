@@ -1,6 +1,6 @@
 import GUI from 'lil-gui';
 import { tuning } from '../config/tuning';
-import { QUALIDADES, QUALIDADE_PADRAO, type NivelQualidade } from '../config/quality';
+import { QUALIDADES, type NivelQualidade } from '../config/quality';
 
 // Painel do Modo Dev: mexe nos valores de tuning.ts com o jogo rodando.
 //
@@ -35,6 +35,7 @@ export class PainelDev {
    * @param aoMostrarColisores liga/desliga o desenho dos colisores físicos.
    * @param fases nome de cada fase → identificador (o que vai em ?fase= na URL).
    * @param faseAtual identificador da fase aberta agora.
+   * @param qualidadeAtual a qualidade escolhida no menu.
    */
   constructor(
     aoMudarMassa: () => void,
@@ -42,21 +43,21 @@ export class PainelDev {
     aoMostrarColisores: (mostrar: boolean) => void,
     fases: Record<string, string>,
     faseAtual: string,
+    qualidadeAtual: NivelQualidade,
   ) {
     this.gui = new GUI({ title: 'Modo Dev: tuning (F2)' });
     // .listen() faz o painel reler o valor sozinho; .disable() impede edição.
     this.gui.add(this.medidor, 'fps').name('FPS').listen().disable();
-    // Seletor de qualidade (provisório: na Etapa 5 ele vai para o menu).
+    // Fase e qualidade também ficam no menu; aqui servem para testar rápido.
     const opcoes = Object.fromEntries(Object.entries(QUALIDADES).map(([nivel, q]) => [q.nome, nivel]));
-    // Seletor de fase (provisório: na Etapa 5 ele vai para o menu). Trocar de
-    // fase recarrega a página com ?fase=..., o jeito mais simples de começar do zero.
+    // Trocar de fase recarrega a página com ?fase=... (ver core/Estados.ts).
     this.gui
       .add({ fase: faseAtual }, 'fase', fases)
       .name('Fase')
       .onChange((id: string) => {
         window.location.search = `?fase=${id}`;
       });
-    this.gui.add({ qualidade: QUALIDADE_PADRAO }, 'qualidade', opcoes).name('Qualidade').onChange(aoMudarQualidade);
+    this.gui.add({ qualidade: qualidadeAtual }, 'qualidade', opcoes).name('Qualidade').onChange(aoMudarQualidade);
     // Desenha em linhas o que a FÍSICA enxerga (caixas, cascos, cilindros).
     // Bom para achar "obstáculo invisível": colisor que não bate com o desenho.
     this.gui.add({ colisores: false }, 'colisores').name('Mostrar colisores').onChange(aoMostrarColisores);
