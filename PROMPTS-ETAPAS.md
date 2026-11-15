@@ -70,7 +70,7 @@ Leia o CLAUDE.md. Vamos fazer a Etapa 3: a Fase 2, "Orla e Porto" (Navegantes).
 
 1. Crie src/world/levels/fase2-navegantes.ts só com dados, reaproveitando o construtor de pistas. Se o construtor precisar de algo novo, generalize-o em vez de criar um caso especial para esta fase.
 2. Traçado: reta costeira rápida com curvas longas e abertas, terminando na área portuária, de 2 a 3 minutos de percurso.
-3. Cenário: pôr do sol com mar brilhante de um lado (shader de água com reflexo do sol), coqueiros (Palm tree) e postes (Street Light e Lamp Post) com luz acesa ao longo da orla.
+3. Cenário: pôr do sol com mar brilhante de um lado (shader de água com reflexo do sol), coqueiros (Palm tree) e postes (Street Light e Lamp Post) com luz acesa ao longo da orla. Do outro lado da avenida, a cidade com os modelos de public/models/city/ (prédios, casas e o bar), sem colisor complexo: caixas simples.
 4. Porto: pátio com pilhas de contêineres (Shipping Container e Container Green) formando corredores, e navios no horizonte (Container Ship e Cruise ship).
 5. Deixe atrás de uma fileira de contêineres um espaço vazio e acessível de carro por uma passagem estreita e discreta. Ele será usado na Etapa 5.
 6. Seletor simples de fase para testar as duas.
@@ -104,7 +104,10 @@ Menus:
 
 Easter eggs para o Enzo (estudante de ADS), com bom humor:
 5. Um pórtico de entrada de cidade no meio do trajeto da Fase 1, com placa feita em CanvasTexture: "BEM-VINDO A ENZOLÂNDIA - Velocidade Máxima: Sem Limites".
-6. Outdoors na beira da estrada, nas duas fases, com frases como "Cuidado: Bugs na pista à frente" e "Procura-se Dev de ADS para tunar este motor". Logo depois do outdoor dos bugs, alguns insetos gigantes (Praying Mantis, Scorpion, Spider) atravessam a pista.
+6. Outdoors na beira da estrada, nas duas fases, usando os modelos Billboard de public/models/outdoor/ com a arte aplicada como textura na placa:
+   - frases em CanvasTexture: "Cuidado: Bugs na pista à frente" e "Procura-se Dev de ADS para tunar este motor". Logo depois do outdoor dos bugs, alguns insetos gigantes (Praying Mantis, Scorpion, Spider) atravessam a pista.
+   - propaganda da Dale Congelados Saudáveis (as imagens .jfif e o logo .webp da mesma pasta), com destaque na Fase 2, em Navegantes.
+   - outdoor "Vem aí a Moda Verão 2027" com a foto outdoor_Moda_Verão_ 2027.jpg (reduza a imagem para no máximo 1024 px de altura antes de usar). Essa foto não vai para o GitHub (está no .gitignore); se o arquivo não existir, use só o texto.
 7. Placa traseira dos dois carros com "ENZ-ADS", em CanvasTexture no padrão de placa brasileira (Mercosul).
 8. Um segredo menor na Fase 1: a Stag Statue escondida num pequeno desvio fora da pista.
 9. Na área secreta atrás dos contêineres do porto (Fase 2): um troféu brilhante flutuando e girando. Ao encostar nele, dispare fogos de artifício no céu, mostre a mensagem "Easter Egg Encontrado: Modo Dev Ativado!" e libere o Modo Dev: o painel lil-gui de tuning passa a abrir com F2 fora do desenvolvimento, já com um preset de super-velocidade. Guarde o desbloqueio no localStorage.
