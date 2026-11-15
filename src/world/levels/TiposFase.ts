@@ -182,6 +182,50 @@ export interface DadosFase {
   barreiras?: BarreiraFase[];
   /** Cones e barreiras de plástico que voam quando o carro bate. */
   soltos?: GrupoSoltos[];
+
+  // --- easter eggs ---------------------------------------------------------
+  /** Outdoors na beira da estrada, cada um com uma arte (ver graphics/ArteOutdoor.ts). */
+  outdoors?: OutdoorFase[];
+  /** Pórtico de entrada de cidade, atravessando a pista. */
+  portico?: PorticoFase;
+  /** Insetos gigantes que atravessam a pista, indo e voltando. */
+  insetos?: TravessiaInsetos;
+  /** O troféu que libera o Modo Dev (escondido em algum lugar da fase). */
+  trofeu?: TrofeuFase;
+}
+
+/** As artes que existem para os outdoors. */
+export type ArteOutdoor = 'bugs' | 'devAds' | 'dale' | 'daleNavegantes' | 'modaVerao';
+
+/** Um outdoor de frente para a pista. */
+export interface OutdoorFase {
+  arte: ArteOutdoor;
+  distancia: number;
+  lado: Lado;
+  /** Distância (m) do centro da pista até o outdoor. Ele tem ~7,5 m de largura. */
+  afastamento: number;
+  /** Giro extra (graus). Ele já vem virado para quem chega pela estrada (ver Outdoors.ts). */
+  rotacao?: number;
+}
+
+/** Pórtico de "bem-vindo a ...", com placa pintada no código. */
+export interface PorticoFase {
+  distancia: number;
+  titulo: string;
+  subtitulo: string;
+}
+
+/** Insetos gigantes atravessando a pista em `distancia`, um atrás do outro. */
+export interface TravessiaInsetos {
+  distancia: number;
+  modelos: IdModelo[];
+}
+
+/** Onde fica o troféu. */
+export interface TrofeuFase {
+  distancia: number;
+  lado: Lado;
+  afastamento: number;
 }
 
 /** Um tipo de veículo do trânsito. */

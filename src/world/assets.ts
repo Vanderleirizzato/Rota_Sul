@@ -68,6 +68,8 @@ export interface InfoModelo {
    * Achado na tentativa e erro, olhando o veículo de lado.
    */
   piloto?: { modelo: string; animacao: string; posicao: [x: number, y: number, z: number] };
+  /** Outdoors: nome do material da placa (onde a arte é colada na frente). */
+  materialPainel?: string;
 }
 
 const M = 'models/';
@@ -142,6 +144,12 @@ export const MODELOS = {
     piloto: { modelo: 'mulher', animacao: 'SitIdle', posicao: [0, 0.3, -0.2] } },
   foodTruck:{ arquivo: `${M}cars/Sushi Truck by Quaternius - OgrROxABGT.glb`, medida: 'comprimento', metros: 6.5, rotacaoY: 0, solido: true },
 
+  // -------------------------------------------------------------- outdoor --
+  // O painel (material "lambert4SG") recebe a arte na frente; ver Outdoors.ts.
+  // Dos três modelos de outdoor da pasta, este é o de placa reta: nos outros
+  // dois o painel é em "V" e a arte ficaria torta.
+  outdoor: { arquivo: `${M}outdoor/Billboard by Poly by Google - 64DATzeuVhf.glb`, medida: 'altura', metros: 10, rotacaoY: 0, solido: true, materialPainel: 'lambert4SG' },
+
   // ------------------------------------------------------------- barreiras --
   barreiraTransito: { arquivo: `${M}Traffic Barrier by Quaternius - cM3aJPU9NS.glb`, medida: 'altura', metros: 1.0, rotacaoY: 0, solido: true },
   barreiraConcreto: { arquivo: `${M}Concrete Barrier by J-Toastie - 5Cg2oW7EFn.glb`, medida: 'altura', metros: 0.85, rotacaoY: 0, solido: true },
@@ -205,9 +213,9 @@ export const MODELOS = {
   // Capivaras da orla de Navegantes, em grupos à beira da estrada. Sem animação:
   // ficam paradas, pastando. Sólidas: o carro esbarra e para (como numa pedra).
   capivara: { arquivo: `${PI}Capybara by Poly by Google - 66d-mKAgF17.glb`, medida: 'comprimento', metros: 1.25, rotacaoY: 0, solido: true },
-  louvaDeus: { arquivo: `${PI}Praying Mantis by Lorenzo Cinalli - bm9Q0hKjcVC.glb`, medida: 'comprimento', metros: 4, rotacaoY: 0, solido: true, observacao: 'Inseto gigante do easter egg (Etapa 5).' },
-  escorpiao: { arquivo: `${PI}Scorpion by jeremy - cJfrRPiSgA4.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true, observacao: 'Comprido em X: deve precisar de rotacaoY ±90 (Etapa 5).' },
-  aranha: { arquivo: `${PI}Spider by Quaternius - yRYJiAJyiM.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true, observacao: '5 animações.' },
+  louvaDeus: { arquivo: `${PI}Praying Mantis by Lorenzo Cinalli - bm9Q0hKjcVC.glb`, medida: 'comprimento', metros: 4, rotacaoY: 0, solido: true },
+  escorpiao: { arquivo: `${PI}Scorpion by jeremy - cJfrRPiSgA4.glb`, medida: 'comprimento', metros: 5, rotacaoY: -90, solido: true },
+  aranha: { arquivo: `${PI}Spider by Quaternius - yRYJiAJyiM.glb`, medida: 'comprimento', metros: 5, rotacaoY: 0, solido: true },
   estatuaCervo: { arquivo: `${PI}Stag Statue by Quaternius - cKloIsNcT8.glb`, medida: 'altura', metros: 3, rotacaoY: 0, solido: true },
 } as const satisfies Record<string, InfoModelo>;
 

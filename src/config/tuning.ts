@@ -344,5 +344,18 @@ export const tuning = {
   },
 };
 
+/**
+ * Preset do Modo Dev (liberado pelo troféu escondido): o carro vira um foguete.
+ * Só os valores listados mudam; o resto do tuning fica como estava.
+ */
+export const SUPER_VELOCIDADE = {
+  motor: { forca: 15000, velocidadeMaximaKmh: 300 },
+  nitro: { multiplicadorForca: 2.2, velocidadeExtraKmh: 80, recargaPassiva: 0.08 },
+  // Mais rápido pede mais aderência, senão ele sai voando na primeira curva.
+  aderencia: { dianteira: 2.6, traseira: 2.5 },
+  // Marchas mais longas: senão o conta-giros estoura passando dos 250 km/h.
+  transmissao: { velocidadeMaximaMarchas: [60, 110, 160, 215, 270, 380] },
+} satisfies { [S in keyof typeof tuning]?: Partial<(typeof tuning)[S]> };
+
 /** Tipo do objeto de tuning (útil para quem recebe o tuning por parâmetro). */
 export type Tuning = typeof tuning;

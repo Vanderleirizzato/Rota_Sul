@@ -267,4 +267,19 @@ export const FASE2_NAVEGANTES: DadosFase = {
     { modelo: 'cone', lado: 'esquerda', afastamento: 4.7, inicio: 3760, fim: 3800, espacamento: 8 },
     { modelo: 'cone', lado: 'direita', afastamento: 4.7, inicio: 3760, fim: 3800, espacamento: 8 },
   ],
+
+  // --- easter eggs ----------------------------------------------------------
+  // Navegantes é a casa da Dale: três outdoors dela pela avenida.
+  outdoors: [
+    { arte: 'daleNavegantes', distancia: 260, lado: 'esquerda', afastamento: 14 },
+    { arte: 'dale', distancia: 980, lado: 'esquerda', afastamento: 14 },
+    // Na areia, de frente para a avenida (entre um poste e um coqueiro).
+    { arte: 'modaVerao', distancia: 1708, lado: 'direita', afastamento: 19 },
+    { arte: 'bugs', distancia: 2240, lado: 'esquerda', afastamento: 14 },
+    { arte: 'devAds', distancia: 2950, lado: 'esquerda', afastamento: 14 },
+    { arte: 'daleNavegantes', distancia: 3550, lado: 'esquerda', afastamento: 14 },
+  ],
+  insetos: { distancia: 2320, modelos: ['escorpiao', 'aranha', 'louvaDeus'] },
+  // No esconderijo atrás dos contêineres do porto (entrada pela fresta em ~4037 m).
+  trofeu: { distancia: 4045, lado: 'esquerda', afastamento: 22 },
 };

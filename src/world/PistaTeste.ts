@@ -67,6 +67,7 @@ export function criarPistaTeste(cena: Scene, fisica: MundoFisico): Cenario {
     atualizar() {},
     passoFisica() {}, // sem trânsito na pista de teste
     colherImpactos: () => ({ plastico: 0, macio: 0, metal: 0 }),
+    pegouTrofeu: () => false,
     reiniciar() {},
     areaLivre: () => true, // plano aberto: dá para andar em qualquer lugar
     nivelMar: null,

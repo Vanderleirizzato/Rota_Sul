@@ -28,7 +28,8 @@ export async function colocarObjetos(
   await Promise.all(objetos.map((o) => colocarObjeto(cena, fisica, tracado, terreno, o)));
 }
 
-async function colocarObjeto(cena: Scene, fisica: MundoFisico, tracado: Tracado, terreno: Terreno, o: ObjetoFase): Promise<void> {
+/** Coloca um objeto (e o colisor dele) e devolve o modelo, para quem quiser enfeitá-lo depois. */
+export async function colocarObjeto(cena: Scene, fisica: MundoFisico, tracado: Tracado, terreno: Terreno, o: ObjetoFase): Promise<Object3D> {
   const modelo = await obterModelo(o.modelo);
   const i = tracado.indiceEm(o.distancia);
   const posicao = tracado.pontoAoLado(o.distancia, o.lado, o.afastamento);
@@ -49,14 +50,15 @@ async function colocarObjeto(cena: Scene, fisica: MundoFisico, tracado: Tracado,
   cena.add(modelo);
 
   const info: InfoModelo = MODELOS[o.modelo];
-  if (!info.solido) return;
+  if (!info.solido) return modelo;
   // Objeto inteiro (pedra, paredão): colisor no formato justo do modelo.
   // Arco (tem vão livre no meio): o casco taparia o vão, então usamos caixas.
   if (info.vaoLivre === undefined) {
     modelo.updateMatrixWorld(true);
-    if (fisica.criarCascoFixo(pontosDoModelo(modelo, modelo.matrixWorld))) return;
+    if (fisica.criarCascoFixo(pontosDoModelo(modelo, modelo.matrixWorld))) return modelo;
   }
   criarColisores(fisica, modelo, info.vaoLivre);
+  return modelo;
 }
 
 /**

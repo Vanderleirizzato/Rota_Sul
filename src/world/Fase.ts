@@ -17,6 +17,10 @@ import { plantarVegetacao } from './Vegetacao';
 import { colocarBarreiras } from './Barreiras';
 import { ObjetosSoltos } from './ObjetosSoltos';
 import { Trafego } from './Trafego';
+import { colocarOutdoors } from './Outdoors';
+import { colocarPortico } from './Portico';
+import { Insetos } from './Insetos';
+import { Trofeu } from './Trofeu';
 
 /** O carro nasce este tanto (m) antes da linha de largada. */
 const RECUO_LARGADA = 6;
@@ -39,6 +43,10 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   const andarilhos = dados.andarilhos ? new Andarilhos(cena, fisica, tracado, terreno, dados) : null;
   const soltos = new ObjetosSoltos(cena, fisica, tracado, terreno, dados.soltos ?? []);
   const trafego = dados.trafego ? new Trafego(cena, fisica, tracado, dados.trafego) : null;
+  // Easter eggs (cada um só existe se a fase tiver os dados dele).
+  if (dados.portico) colocarPortico(cena, fisica, tracado, dados.portico);
+  const insetos = dados.insetos ? new Insetos(cena, tracado, terreno, dados.insetos) : null;
+  const trofeu = dados.trofeu ? new Trofeu(cena, tracado, terreno, dados.trofeu) : null;
 
   // Tudo que depende de baixar arquivos .glb roda em paralelo.
   const [vegetacao, , postes] = await Promise.all([
@@ -53,6 +61,8 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     colocarBarreiras(cena, fisica, tracado, dados.barreiras ?? []),
     soltos.carregar(),
     trafego?.carregar(),
+    colocarOutdoors(cena, fisica, tracado, terreno, dados.outdoors ?? []),
+    insetos?.carregar(),
   ]);
 
   const i = tracado.indiceEm(dados.largada - RECUO_LARGADA);
@@ -74,6 +84,8 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       soltos.atualizar(camera.position);
       postes.atualizar();
       andarilhos?.atualizar(dt, camera.position, carro);
+      insetos?.atualizar(dt, carro);
+      trofeu?.atualizar(dt, carro);
       rio?.atualizar(dt);
       rio?.ajustarEscala(camera, alturaEmPixels);
       plateia.atualizar(dt, camera.position);
@@ -87,10 +99,12 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     },
     colherImpactos: () => ({
       plastico: soltos.colherImpacto(),
-      macio: andarilhos?.colherImpacto() ?? 0,
+      macio: Math.max(andarilhos?.colherImpacto() ?? 0, insetos?.colherImpacto() ?? 0),
       metal: postes.colherImpacto(),
     }),
+    pegouTrofeu: () => trofeu?.pegou() ?? false,
     reiniciar() {
+      trofeu?.reiniciar();
       soltos.reiniciar();
       trafego?.reiniciar();
       postes.reiniciar();

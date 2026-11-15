@@ -57,6 +57,8 @@ export interface Cenario {
   passoFisica(dt: number, carro: EstadoCarro): void;
   /** As batidas mais fortes desde a última consulta (e zera a contagem). */
   colherImpactos(): Impactos;
+  /** True uma única vez, quando o carro encosta no troféu escondido (ver Trofeu.ts). */
+  pegouTrofeu(): boolean;
   /** Corrida reiniciada (tecla T): cones voltam ao lugar, trânsito recomeça. */
   reiniciar(): void;
   /** Liga/desliga o que pesa no cenário (árvores detalhadas, sombra da mata). */

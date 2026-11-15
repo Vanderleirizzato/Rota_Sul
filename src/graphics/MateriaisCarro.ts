@@ -60,6 +60,26 @@ function converter(m: MeshStandardMaterial, eRoda: boolean): Material {
     farol.userData.brilha = true;
     return farol;
   }
+  // Modelos caprichados (como o Esportivo) trazem uma textura que diz, ponto a
+  // ponto, o que é metal/tinta brilhante e o que é fosco (plástico preto,
+  // fibra de carbono, grades). Nesse caso usamos a textura do próprio modelo,
+  // e o verniz segue o mesmo mapa: brilha na tinta e some nas partes foscas.
+  // Sem isso, o verniz cobria o carro inteiro e parecia um plástico-filme.
+  if (m.roughnessMap) {
+    return new MeshPhysicalMaterial({
+      name: `${m.name} (lataria com mapa)`,
+      color: m.color,
+      map: m.map,
+      normalMap: m.normalMap,
+      metalness: m.metalness,
+      metalnessMap: m.metalnessMap,
+      roughness: m.roughness,
+      roughnessMap: m.roughnessMap,
+      clearcoat: LATARIA.clearcoat,
+      clearcoatRoughness: 1,
+      clearcoatRoughnessMap: m.roughnessMap,
+    });
+  }
   return new MeshPhysicalMaterial({
     name: `${m.name} (lataria)`,
     color: m.color,

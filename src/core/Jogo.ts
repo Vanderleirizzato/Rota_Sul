@@ -32,6 +32,8 @@ import { Entrada } from './Entrada';
 import { lerEscolhas, salvarEscolhas } from './Escolhas';
 import { irParaFase, irParaMenu } from './Estados';
 import { colocarPlaca } from '../graphics/Placa';
+import { aplicarSuperVelocidade, liberarModoDev, modoDevLiberado } from './ModoDev';
+import { MensagemEasterEgg } from '../ui/MensagemEasterEgg';
 
 /** O carro do jogador: física e visual andam juntos. */
 interface Carro {
@@ -66,6 +68,7 @@ export class Jogo {
   private readonly painel: PainelDev;
   private readonly verColisores = new VerColisores(this.cena, this.fisica);
   private readonly telaFim = new TelaFimFase();
+  private readonly mensagemEasterEgg = new MensagemEasterEgg();
   private carro!: Carro;
   private cenario!: Cenario;
   /** Só existe nas fases com chegada (a pista de teste não tem corrida). */
@@ -201,6 +204,7 @@ export class Jogo {
       if (variacao > tuning.batida.limiar) fisico.absorverTranco();
     });
     this.tocarBatidas(dt);
+    if (this.cenario.pegouTrofeu()) this.liberarModoDev();
 
     if (fisico.precisaReposicionar) this.reposicionar();
 
@@ -283,7 +287,8 @@ export class Jogo {
   private tratarTeclasDeUmToque(): void {
     const t = this.entrada;
     if (t.apertou('pausar')) this.definirPausa(!this.pausado);
-    if (t.apertou('painelDev')) this.painel.alternar();
+    // O painel de tuning só abre depois do troféu (ou no npm run dev).
+    if (t.apertou('painelDev') && modoDevLiberado()) this.painel.alternar();
     if (this.pausado) {
       if (t.apertou('menu')) irParaMenu();
       if (t.apertou('reiniciar')) {
@@ -365,6 +370,14 @@ export class Jogo {
       if (recorde !== null) this.hudCorrida?.mostrarRecorde(recorde);
     }
     this.hudCorrida?.atualizar(corrida.estado, corrida.tempo, corrida.restante);
+  }
+
+  /** Encostou no troféu: libera o painel (para sempre) e liga a super velocidade. */
+  private liberarModoDev(): void {
+    const primeiraVez = liberarModoDev();
+    this.painel.trocarValores(aplicarSuperVelocidade);
+    this.mensagemEasterEgg.mostrar(primeiraVez);
+    this.audio.bip(true);
   }
 
   /** A fase seguinte na ordem da viagem (lista FASES), ou null se esta é a última. */

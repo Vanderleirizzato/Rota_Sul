@@ -1,6 +1,7 @@
 import GUI from 'lil-gui';
 import { tuning } from '../config/tuning';
 import { QUALIDADES, type NivelQualidade } from '../config/quality';
+import { aplicarSuperVelocidade, restaurarTuning } from '../core/ModoDev';
 
 // Painel do Modo Dev: mexe nos valores de tuning.ts com o jogo rodando.
 //
@@ -8,8 +9,8 @@ import { QUALIDADES, type NivelQualidade } from '../config/quality';
 // vira uma pasta e cada número vira um controle deslizante. Quando alguém
 // adicionar um parâmetro novo em tuning.ts, ele aparece aqui sozinho.
 //
-// Na Etapa 5, ele fica escondido até o easter egg do troféu. Por enquanto,
-// F2 abre e fecha.
+// No jogo publicado, ele só abre (F2) depois do easter egg do troféu
+// (ver core/ModoDev.ts). No `npm run dev`, F2 abre sempre.
 
 /** Faixas especiais. Os demais números vão de 0 ao triplo do valor inicial. */
 const FAIXAS: Record<string, [number, number]> = {
@@ -73,6 +74,8 @@ export class PainelDev {
         if (secao === 'chassi') controle.onFinishChange(aoMudarMassa);
       }
     }
+    this.gui.add({ super: () => this.trocarValores(aplicarSuperVelocidade) }, 'super').name('🚀 Preset: super velocidade');
+    this.gui.add({ normal: () => this.trocarValores(restaurarTuning) }, 'normal').name('↩ Voltar ao tuning original');
     this.gui.add({ copiar: () => this.copiarValores() }, 'copiar').name('📋 Copiar valores');
     this.gui.hide();
   }
@@ -90,6 +93,12 @@ export class PainelDev {
 
   alternar(): void {
     this.gui.show(this.gui._hidden);
+  }
+
+  /** Muda o tuning "por fora" (preset) e faz os controles mostrarem os valores novos. */
+  trocarValores(mudar: () => void): void {
+    mudar();
+    for (const controle of this.gui.controllersRecursive()) controle.updateDisplay();
   }
 
   /** Copia o tuning atual em formato de objeto TypeScript, para colar em tuning.ts. */

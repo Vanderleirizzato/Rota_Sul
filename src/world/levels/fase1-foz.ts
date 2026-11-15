@@ -94,7 +94,13 @@ export const FASE1_FOZ: DadosFase = {
     { modelo: 'rochaMedia', distancia: 2560, lado: 'direita', afastamento: 12, escala: 2.4 },
     // O grande arco de pedra na linha de chegada.
     { modelo: 'arco', distancia: 2930, lado: 'centro', afastamento: 0, rotacao: 90 },
+    // SEGREDO: a estátua do cervo, no fim do desvio calçado (ver patios).
+    { modelo: 'estatuaCervo', distancia: 1850, lado: 'esquerda', afastamento: 22, rotacao: 20 },
   ],
+
+  // Desvio escondido: um pedacinho calçado fora da pista, onde o carro anda
+  // livre (sem voltar sozinho para a estrada) até a estátua do cervo.
+  patios: [{ inicio: 1832, fim: 1868, lado: 'esquerda', largura: 22 }],
 
   // O rio passa por baixo da reta da ponte. A cachoeira fica 60 m rio acima,
   // à esquerda: dá para vê-la de cima da ponte.
@@ -168,4 +174,16 @@ export const FASE1_FOZ: DadosFase = {
     { modelo: 'barreiraPlastica', lado: 'direita', afastamento: 5.3, inicio: 1000, fim: 1030, espacamento: 2 },
     { modelo: 'cone', lado: 'direita', afastamento: 4.8, inicio: 1035, fim: 1045, espacamento: 5 },
   ],
+
+  // --- easter eggs ----------------------------------------------------------
+  outdoors: [
+    { arte: 'dale', distancia: 330, lado: 'esquerda', afastamento: 14 },
+    { arte: 'bugs', distancia: 1090, lado: 'direita', afastamento: 14 },
+    { arte: 'devAds', distancia: 2300, lado: 'esquerda', afastamento: 14 },
+    { arte: 'modaVerao', distancia: 2740, lado: 'direita', afastamento: 14 },
+  ],
+  // Logo depois do outdoor dos bugs... eles mesmos.
+  insetos: { distancia: 1205, modelos: ['aranha', 'louvaDeus', 'escorpiao'] },
+  // No meio da viagem, depois do alto do morro.
+  portico: { distancia: 1600, titulo: 'BEM-VINDO A ENZOLÂNDIA', subtitulo: 'Velocidade Máxima: Sem Limites' },
 };

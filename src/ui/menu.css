@@ -106,3 +106,33 @@
 .menu-creditos td:nth-child(2) { font-family: ui-monospace, Consolas, monospace; font-size: 12px; opacity: 0.7; }
 
 .menu-carregando { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.5rem; background: rgba(0, 0, 0, 0.7); }
+
+/* --- Mensagem do troféu (easter egg) --- */
+.easter-egg {
+  position: fixed;
+  left: 50%;
+  top: 22%;
+  transform: translate(-50%, -20px) scale(0.9);
+  padding: 22px 40px;
+  border: 2px solid #ffcc33;
+  border-radius: 12px;
+  background: rgba(10, 14, 22, 0.82);
+  text-align: center;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s, transform 0.4s;
+  z-index: 8;
+  box-shadow: 0 0 40px rgba(255, 204, 51, 0.35);
+}
+.easter-egg.visivel { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.easter-egg kbd {
+  padding: 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  font: 13px ui-monospace, Consolas, monospace;
+}
+.easter-egg-rotulo { letter-spacing: 4px; font-size: 14px; color: #ffcc33; }
+.easter-egg-titulo { font: 900 46px ui-monospace, Consolas, monospace; letter-spacing: 2px; margin: 6px 0; }
+.easter-egg-dica { opacity: 0.85; }
