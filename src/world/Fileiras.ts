@@ -10,10 +10,12 @@ import {
   type Scene,
 } from 'three';
 import { CAMADA_BRILHO } from '../graphics/Camadas';
+import type RAPIER from '@dimforge/rapier3d-compat';
 import type { MundoFisico } from '../physics/MundoFisico';
 import { MODELOS, type IdModelo, type InfoModelo } from './assets';
 import { obterModelo } from './CarregadorModelos';
-import { criarInstancias } from './Instancias';
+import { criarInstancias, type LugarInstancia } from './Instancias';
+import { Postes } from './Postes';
 import type { FileiraFase } from './levels/TiposFase';
 import { criarSorteio } from './Ruido';
 import type { Terreno } from './Terreno';
@@ -37,14 +39,19 @@ const COR_LAMPADA = 0xffd9a0;
 /** Tamanho (m) de cada modelo, medido uma vez. */
 type Medidas = Map<IdModelo, Vector3>;
 
+/**
+ * Monta todas as fileiras da fase. Devolve os postes que podem ser
+ * derrubados (fileiras com `derrubavel: true`), que precisam de atualização.
+ */
 export async function colocarFileiras(
   cena: Scene,
   fisica: MundoFisico,
   tracado: Tracado,
   terreno: Terreno,
   fileiras: readonly FileiraFase[],
-): Promise<void> {
-  if (fileiras.length === 0) return;
+): Promise<Postes> {
+  const postes = new Postes(cena, fisica);
+  if (fileiras.length === 0) return postes;
   const ids = [...new Set(fileiras.flatMap((f) => f.modelos))];
   const modelos = new Map(await Promise.all(ids.map(async (id) => [id, await obterModelo(id)] as const)));
   const medidas: Medidas = new Map(ids.map((id) => [id, new Box3().setFromObject(modelos.get(id)!).getSize(new Vector3())]));
@@ -53,6 +60,8 @@ export async function colocarFileiras(
   const sorteio = criarSorteio(4242);
   const matrizes = new Map<IdModelo, Matrix4[]>(ids.map((id) => [id, []]));
   const lampadas: Vector3[] = [];
+  /** Postes derrubáveis, com o número da cópia (na lista de matrizes do modelo) e da lâmpada. */
+  const derrubaveis: { id: IdModelo; copia: number; lampada: number | null; matriz: Matrix4; base: Vector3; altura: number; raio: number; colisor: RAPIER.Collider }[] = [];
 
   for (const f of fileiras) {
     for (let d = f.inicio; d <= f.fim; d += f.espacamento) {
@@ -62,8 +71,28 @@ export async function colocarFileiras(
     }
   }
 
-  for (const [id, lista] of matrizes) criarInstancias(cena, modelos.get(id)!, lista);
-  if (lampadas.length > 0) cena.add(criarLampadas(lampadas));
+  const lugares = new Map<IdModelo, LugarInstancia[][]>();
+  for (const [id, lista] of matrizes) {
+    const onde: LugarInstancia[][] = [];
+    criarInstancias(cena, modelos.get(id)!, lista, true, onde);
+    lugares.set(id, onde);
+  }
+  const malhaLampadas = lampadas.length > 0 ? criarLampadas(lampadas) : null;
+  if (malhaLampadas) cena.add(malhaLampadas);
+  for (const d of derrubaveis) {
+    postes.adicionar({
+      modelo: modelos.get(d.id)!,
+      matriz: d.matriz,
+      base: d.base,
+      altura: d.altura,
+      raio: d.raio,
+      colisor: d.colisor,
+      pedacos: lugares.get(d.id)![d.copia],
+      lampada: malhaLampadas && d.lampada !== null ? { malha: malhaLampadas, indice: d.lampada } : null,
+      posicaoLampada: d.lampada !== null ? lampadas[d.lampada] : new Vector3(),
+    });
+  }
+  return postes;
 
   /** Um objeto (ou uma pilha deles) na distância `d` da fileira `f`. */
   function colocarUm(f: FileiraFase, d: number): void {
@@ -87,12 +116,14 @@ export async function colocarFileiras(
     let largura = 0;
     let profundidade = 0;
     let primeiro: IdModelo = f.modelos[0];
+    let ultimaCopia = 0;
     for (let k = 0; k < andares; k++) {
       const id = f.modelos[Math.floor(sorteio() * f.modelos.length)];
       if (k === 0) primeiro = id;
       const tamanho = medidas.get(id)!.clone().multiplyScalar(escala);
       const posicao = base.clone().setY(base.y + altura);
       matrizes.get(id)!.push(new Matrix4().compose(posicao, giro, new Vector3(escala, escala, escala)));
+      ultimaCopia = matrizes.get(id)!.length - 1;
       altura += tamanho.y;
       largura = Math.max(largura, tamanho.x);
       profundidade = Math.max(profundidade, tamanho.z);
@@ -100,13 +131,20 @@ export async function colocarFileiras(
 
     if (f.colisor === 'caixa') {
       fisica.criarCaixaFixa({ x: base.x, y: base.y + altura / 2, z: base.z }, largura / 2, altura / 2, profundidade / 2, giro);
-    } else if (f.colisor === 'tronco') {
-      fisica.criarCilindroFixo({ x: base.x, y: base.y + altura / 2, z: base.z }, (f.raioTronco ?? 0.2) * escala, altura / 2);
     }
+    const raio = (f.raioTronco ?? 0.2) * escala;
+    const colisor = f.colisor === 'tronco' ? fisica.criarCilindroFixo({ x: base.x, y: base.y + altura / 2, z: base.z }, raio, altura / 2) : null;
 
     const info: InfoModelo = MODELOS[primeiro];
+    let lampada: number | null = null;
     if (f.acesa && info.lampada) {
+      lampada = lampadas.length;
       lampadas.push(new Vector3(...info.lampada).multiplyScalar(escala).applyQuaternion(giro).add(base));
+    }
+    // Derrubável: só faz sentido para um objeto sozinho (sem pilha) com tronco.
+    if (f.derrubavel && colisor && andares === 1) {
+      const matriz = matrizes.get(primeiro)![ultimaCopia];
+      derrubaveis.push({ id: primeiro, copia: ultimaCopia, lampada, matriz, base, altura, raio, colisor });
     }
   }
 }

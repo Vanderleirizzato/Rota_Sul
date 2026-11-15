@@ -23,6 +23,10 @@ export class CameraPerseguicao {
   private anguloSuave = 0;
   private fovAtual = tuning.camera.fovBase;
   private iniciada = false;
+  /** Força do tremor de batida (0 a 1); vai sumindo sozinho. */
+  private tremor = 0;
+  /** Deslocamento do tremor aplicado no quadro anterior (é desfeito antes de recalcular). */
+  private readonly deslocamentoTremor = new Vector3();
 
   constructor(proporcao: number) {
     this.camera = new PerspectiveCamera(tuning.camera.fovBase, proporcao, 0.1, 2000);
@@ -33,12 +37,34 @@ export class CameraPerseguicao {
   }
 
   /** Teleporta a câmera para trás do carro (após reposicionar, por exemplo). */
+  /**
+   * Faz a câmera tremer (batida). O tremor é um deslocamento aleatório que
+   * diminui a cada quadro. Ele é somado DEPOIS da suavização e desfeito no
+   * quadro seguinte: se entrasse na posição "de verdade", a inércia da câmera
+   * o espalharia num balanço lento, em vez de um sacolejo rápido.
+   */
+  tremer(intensidade: number): void {
+    this.tremor = Math.min(1, Math.max(this.tremor, intensidade));
+  }
+
   reiniciar(): void {
     this.iniciada = false;
   }
 
   atualizar(dt: number, posCarro: Vector3, rotCarro: Quaternion, anguloCarro: number, velocidade: number, nitro: boolean): void {
+    this.posicionar(dt, posCarro, rotCarro, anguloCarro, velocidade, nitro);
+    if (this.tremor > 0.01) {
+      const forca = this.tremor * this.tremor * tuning.batida.tremorCamera;
+      this.deslocamentoTremor.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(2 * forca);
+      this.camera.position.add(this.deslocamentoTremor);
+    }
+    this.tremor *= Math.exp(-tuning.batida.amortecimentoTremor * dt);
+  }
+
+  private posicionar(dt: number, posCarro: Vector3, rotCarro: Quaternion, anguloCarro: number, velocidade: number, nitro: boolean): void {
     const c = tuning.camera;
+    this.camera.position.sub(this.deslocamentoTremor);
+    this.deslocamentoTremor.set(0, 0, 0);
     const fracaoVelocidade = Math.min(Math.abs(velocidade) / (tuning.motor.velocidadeMaximaKmh / 3.6), 1);
 
     // Campo de visão maior com velocidade e nitro: o cenário "estica" nas

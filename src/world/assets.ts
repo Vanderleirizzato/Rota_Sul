@@ -57,6 +57,13 @@ export interface InfoModelo {
    * para +Z (a pista). Medido com o script de medição; ver fileiras "acesas".
    */
   lampada?: [x: number, y: number, z: number];
+  /**
+   * Motos e lambretas do trânsito: quem vai montado. `modelo` é o id de uma
+   * pessoa deste manifesto, `animacao` a pose de sentado (o boneco fica
+   * congelado nela) e `posicao` onde ele senta (m), com o veículo olhando para +Z.
+   * Achado na tentativa e erro, olhando o veículo de lado.
+   */
+  piloto?: { modelo: string; animacao: string; posicao: [x: number, y: number, z: number] };
 }
 
 const M = 'models/';
@@ -66,7 +73,7 @@ const C = `${M}city/`;
 export const MODELOS = {
   // ---------------------------------------------------------------- carros --
   carro1: {
-    arquivo: `${M}Carro1.glb`,
+    arquivo: `${M}cars/Carro1.glb`,
     medida: 'comprimento',
     metros: 4.6,
     rotacaoY: 0,
@@ -81,7 +88,7 @@ export const MODELOS = {
     observacao: 'Lataria, pneus e estepe usam o mesmo material "Texture": cuidado ao aplicar clearcoat (Etapa 1B).',
   },
   carro2: {
-    arquivo: `${M}Carro2.glb`,
+    arquivo: `${M}cars/Carro2.glb`,
     medida: 'comprimento',
     metros: 4.5,
     rotacaoY: 0,
@@ -96,10 +103,16 @@ export const MODELOS = {
   },
 
   // --------------------------------------------------------------- tráfego --
-  onibus: { arquivo: `${M}Bus by Poly by Google - 4CPpvEmrMoF.glb`, medida: 'comprimento', metros: 12, rotacaoY: 0, solido: true, observacao: 'Conferir para que lado aponta (Etapa 4).' },
-  taxi: { arquivo: `${M}Taxi by Quaternius - x43lOScTpN.glb`, medida: 'comprimento', metros: 4.5, rotacaoY: 0, solido: true, observacao: 'Conferir para que lado aponta (Etapa 4).' },
-  caminhao: { arquivo: `${M}Truck by Quaternius - cXw6oiFtZ8.glb`, medida: 'comprimento', metros: 7, rotacaoY: 0, solido: true, observacao: 'Conferir para que lado aponta (Etapa 4).' },
-  foodTruck: { arquivo: `${M}Sushi Truck by Quaternius - OgrROxABGT.glb`, medida: 'comprimento', metros: 6.5, rotacaoY: 0, solido: true, observacao: 'Altura original 7,3 m para 8 m de comprimento: deve ter algo alto no teto. Conferir.' },
+  onibus: { arquivo: `${M}cars/Bus by Poly by Google - 4CPpvEmrMoF.glb`, medida: 'comprimento', metros: 12, rotacaoY: 0, solido: true },
+  taxi: { arquivo: `${M}cars/Taxi by Quaternius - x43lOScTpN.glb`, medida: 'comprimento', metros: 4.5, rotacaoY: 0, solido: true },
+  caminhao: { arquivo: `${M}cars/Truck by Quaternius - cXw6oiFtZ8.glb`, medida: 'comprimento', metros: 7, rotacaoY: 0, solido: true },
+  viatura: { arquivo: `${M}cars/Police Car by Kay Lousberg - Uj7i2vlmir.glb`, medida: 'comprimento', metros: 4.7, rotacaoY: 0, solido: true },
+  esportivo: { arquivo: `${M}cars/Sports Car by Quaternius - Gzj704DXdr.glb`, medida: 'comprimento', metros: 4.4, rotacaoY: 0, solido: true },
+  moto: { arquivo: `${M}cars/Motorcycle by Poly by Google - 5_MTCnqfUTr.glb`, medida: 'comprimento', metros: 2.2, rotacaoY: -90, solido: true,
+    piloto: { modelo: 'homem', animacao: 'Man_Sitting', posicao: [0, -0.05, -0.25] } },
+  vespa: { arquivo: `${M}cars/Vespa by Jasmine Roberts - blGLclvvdEM.glb`, medida: 'comprimento', metros: 1.8, rotacaoY: 0, solido: true,
+    piloto: { modelo: 'mulher', animacao: 'SitIdle', posicao: [0, 0.3, -0.2] } },
+  foodTruck:{ arquivo: `${M}cars/Sushi Truck by Quaternius - OgrROxABGT.glb`, medida: 'comprimento', metros: 6.5, rotacaoY: 0, solido: true },
 
   // ------------------------------------------------------------- barreiras --
   barreiraTransito: { arquivo: `${M}Traffic Barrier by Quaternius - cM3aJPU9NS.glb`, medida: 'altura', metros: 1.0, rotacaoY: 0, solido: true },

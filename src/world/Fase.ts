@@ -1,7 +1,7 @@
-import { Vector3, type Scene } from 'three';
+import { Quaternion, Vector3, type Scene } from 'three';
 import type { MundoFisico } from '../physics/MundoFisico';
 import { BIOMAS } from './biomas';
-import type { Cenario } from './Cenario';
+import type { Cenario, EstadoCarro } from './Cenario';
 import { construirPista } from './ConstrutorPista';
 import type { DadosFase } from './levels/TiposFase';
 import { barreirasNasPontas, colocarObjetos } from './ObjetosFase';
@@ -14,6 +14,9 @@ import { dentroDePatio } from './Patios';
 import { Terreno } from './Terreno';
 import { Tracado } from './Tracado';
 import { plantarVegetacao } from './Vegetacao';
+import { colocarBarreiras } from './Barreiras';
+import { ObjetosSoltos } from './ObjetosSoltos';
+import { Trafego } from './Trafego';
 
 /** O carro nasce este tanto (m) antes da linha de largada. */
 const RECUO_LARGADA = 6;
@@ -21,8 +24,8 @@ const RECUO_LARGADA = 6;
 const ALTURA_NASCER = 1;
 
 /**
- * Monta uma fase a partir dos dados: traçado → pista → terreno → rio →
- * vegetação, objetos e plateia. A ordem importa: o terreno precisa da
+ * Monta uma fase a partir dos dados: traçado → pista → terreno → rio/mar →
+ * vegetação, objetos, barreiras, plateia e trânsito. A ordem importa: o terreno precisa da
  * pista, e as árvores precisam do terreno para saber a altura do chão.
  */
 export async function construirFase(dados: DadosFase, cena: Scene, fisica: MundoFisico): Promise<Cenario> {
@@ -34,9 +37,11 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   const mar = dados.mar ? new Mar(cena, tracado, dados.mar) : null;
   const plateia = new Plateia(cena, fisica, tracado, dados.plateia);
   const andarilhos = dados.andarilhos ? new Andarilhos(cena, fisica, tracado, terreno, dados) : null;
+  const soltos = new ObjetosSoltos(cena, fisica, tracado, terreno, dados.soltos ?? []);
+  const trafego = dados.trafego ? new Trafego(cena, fisica, tracado, dados.trafego) : null;
 
   // Tudo que depende de baixar arquivos .glb roda em paralelo.
-  const [vegetacao] = await Promise.all([
+  const [vegetacao, , postes] = await Promise.all([
     // Abaixo da água (rio ou mar) nada nasce.
     plantarVegetacao(cena, fisica, tracado, terreno, BIOMAS[dados.bioma], dados.rio?.nivel ?? dados.mar?.nivel),
     colocarObjetos(cena, fisica, tracado, terreno, dados.objetos),
@@ -45,9 +50,14 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     rio?.carregarModelos(),
     plateia.carregar(),
     andarilhos?.carregar(),
+    colocarBarreiras(cena, fisica, tracado, dados.barreiras ?? []),
+    soltos.carregar(),
+    trafego?.carregar(),
   ]);
 
   const i = tracado.indiceEm(dados.largada - RECUO_LARGADA);
+  // O carro como estava no último passo de física (as pessoas usam a cada quadro).
+  const carro: EstadoCarro = { posicao: new Vector3(), rotacao: new Quaternion(), velocidade: new Vector3() };
   return {
     id: dados.id,
     nome: dados.nome,
@@ -58,12 +68,32 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
     luz: dados.iluminacao,
     nivelMar: dados.mar?.nivel ?? null,
     areaLivre: (distancia, lateral, fora) => dentroDePatio(patios, distancia, lateral, fora),
-    atualizar(dt, camera, alturaEmPixels, posicaoCarro) {
+    atualizar(dt, camera, alturaEmPixels, posicaoCarro, alfa) {
       mar?.atualizar(dt);
-      andarilhos?.atualizar(dt, camera.position, posicaoCarro);
+      trafego?.atualizar(dt, posicaoCarro, alfa);
+      soltos.atualizar(camera.position);
+      postes.atualizar();
+      andarilhos?.atualizar(dt, camera.position, carro);
       rio?.atualizar(dt);
       rio?.ajustarEscala(camera, alturaEmPixels);
       plateia.atualizar(dt, camera.position);
+    },
+    passoFisica(dt, estado) {
+      carro.posicao.copy(estado.posicao);
+      carro.rotacao.copy(estado.rotacao);
+      carro.velocidade.copy(estado.velocidade);
+      trafego?.passo(dt, carro);
+      postes.passo(dt, carro);
+    },
+    colherImpactos: () => ({
+      plastico: soltos.colherImpacto(),
+      macio: andarilhos?.colherImpacto() ?? 0,
+      metal: postes.colherImpacto(),
+    }),
+    reiniciar() {
+      soltos.reiniciar();
+      trafego?.reiniciar();
+      postes.reiniciar();
     },
     aplicarQualidade(q) {
       vegetacao.aplicarQualidade(q);

@@ -124,4 +124,48 @@ export const FASE1_FOZ: DadosFase = {
     { distancia: 2906, lado: 'esquerda', quantidade: 10, comprimento: 24 },
     { distancia: 2906, lado: 'direita', quantidade: 10, comprimento: 24 },
   ],
+
+  // --- trânsito ---------------------------------------------------------------
+  // Estrada de serra: muito caminhão e ônibus de turismo indo para as Cataratas.
+  trafego: {
+    quantidade: 8,
+    mesmoSentido: 0.45,
+    inicio: 25,
+    fim: 3070,
+    tipos: [
+      { modelo: 'caminhao', peso: 3, velocidade: [55, 75] },
+      { modelo: 'onibus', peso: 2, velocidade: [55, 70] },
+      { modelo: 'taxi', peso: 2, velocidade: [65, 90] },
+      { modelo: 'foodTruck', peso: 1, velocidade: [50, 65] },
+      { modelo: 'moto', peso: 1, velocidade: [70, 95] },
+      { modelo: 'esportivo', peso: 1, velocidade: [85, 110] },
+      { modelo: 'viatura', peso: 1, velocidade: [75, 95] },
+    ],
+  },
+
+  // --- barreiras nas curvas fechadas (raio < 75 m), do lado de FORA -----------
+  // Curvas achadas medindo o traçado: 518–562 e 630–648 (para a esquerda),
+  // 712–734 (direita), 1440–1472 (esquerda), 2476–2498 (direita), 2558–2594
+  // (esquerda, a mais fechada: raio 47 m). Cada fileira começa um pouco antes.
+  barreiras: [
+    { modelo: 'barreiraConcreto', lado: 'direita', inicio: 495, fim: 670 },
+    { modelo: 'barreiraTransito', lado: 'esquerda', inicio: 690, fim: 755 },
+    { modelo: 'barreiraConcreto', lado: 'direita', inicio: 1420, fim: 1495 },
+    { modelo: 'barreiraTransito', lado: 'esquerda', inicio: 2455, fim: 2520 },
+    { modelo: 'barreiraConcreto', lado: 'direita', inicio: 2535, fim: 2615 },
+  ],
+
+  // --- cones no lado de DENTRO das curvas (quem corta caminho derruba) e uma obra
+  soltos: [
+    { modelo: 'cone', lado: 'esquerda', afastamento: 4.7, inicio: 520, fim: 560, espacamento: 8 },
+    { modelo: 'cone', lado: 'esquerda', afastamento: 4.7, inicio: 630, fim: 650, espacamento: 7 },
+    { modelo: 'cone', lado: 'direita', afastamento: 4.7, inicio: 712, fim: 734, espacamento: 7 },
+    { modelo: 'cone', lado: 'esquerda', afastamento: 4.7, inicio: 1440, fim: 1472, espacamento: 8 },
+    { modelo: 'cone', lado: 'direita', afastamento: 4.7, inicio: 2476, fim: 2498, espacamento: 7 },
+    { modelo: 'cone', lado: 'esquerda', afastamento: 4.7, inicio: 2558, fim: 2594, espacamento: 9 },
+    // Obra no acostamento: barreiras de plástico com cones avisando antes e depois.
+    { modelo: 'cone', lado: 'direita', afastamento: 4.8, inicio: 985, fim: 995, espacamento: 5 },
+    { modelo: 'barreiraPlastica', lado: 'direita', afastamento: 5.3, inicio: 1000, fim: 1030, espacamento: 2 },
+    { modelo: 'cone', lado: 'direita', afastamento: 4.8, inicio: 1035, fim: 1045, espacamento: 5 },
+  ],
 };

@@ -83,30 +83,48 @@ function soAtributosComuns(geo: BufferGeometry, usaCor: boolean): BufferGeometry
   return geo;
 }
 
+/** Onde foi parar uma cópia: em qual malha instanciada e em qual posição dela. */
+export interface LugarInstancia {
+  malha: InstancedMesh;
+  indice: number;
+}
+
 /**
  * Coloca cópias de `modelo` em cada uma das `transformacoes` (posição,
  * rotação e escala de cada cópia).
+ * `lugares` (opcional): recebe, para cada transformação, onde cada pedaço
+ * dela ficou. Serve para esconder UMA cópia depois (um poste derrubado).
  */
-export function criarInstancias(cena: Scene, modelo: Object3D, transformacoes: Matrix4[], sombra = true): InstancedMesh[] {
+export function criarInstancias(
+  cena: Scene,
+  modelo: Object3D,
+  transformacoes: Matrix4[],
+  sombra = true,
+  lugares?: LugarInstancia[][],
+): InstancedMesh[] {
   const criadas: InstancedMesh[] = [];
   if (transformacoes.length === 0) return criadas;
   const pecas = juntarPorMaterial(modelo);
   const posicao = new Vector3();
 
   // Separa as cópias por bloco do mapa.
-  const blocos = new Map<string, Matrix4[]>();
-  for (const m of transformacoes) {
+  const blocos = new Map<string, { m: Matrix4; k: number }[]>();
+  transformacoes.forEach((m, k) => {
     posicao.setFromMatrixPosition(m);
     const chave = `${Math.floor(posicao.x / TAMANHO_BLOCO)},${Math.floor(posicao.z / TAMANHO_BLOCO)}`;
     const lista = blocos.get(chave) ?? [];
-    lista.push(m);
+    lista.push({ m, k });
     blocos.set(chave, lista);
-  }
+    if (lugares) lugares[k] = [];
+  });
 
   for (const lista of blocos.values()) {
     for (const { geometria, material } of pecas) {
       const malha = new InstancedMesh(geometria, material, lista.length);
-      lista.forEach((m, i) => malha.setMatrixAt(i, m));
+      lista.forEach(({ m, k }, i) => {
+        malha.setMatrixAt(i, m);
+        lugares?.[k].push({ malha, indice: i });
+      });
       // Esfera que envolve as cópias deste bloco: é por ela que a câmera
       // decide se o bloco está na tela.
       malha.computeBoundingSphere();

@@ -124,7 +124,7 @@ export const FASE2_NAVEGANTES: DadosFase = {
 
   fileiras: [
     // --- orla (lado do mar) ---------------------------------------------------
-    { modelos: ['posteLampiao'], lado: 'direita', afastamento: 9.5, espacamento: 30, inicio: 140, fim: 3760, colisor: 'tronco', raioTronco: 0.12, acesa: true },
+    { modelos: ['posteLampiao'], lado: 'direita', afastamento: 9.5, espacamento: 30, inicio: 140, fim: 3760, colisor: 'tronco', raioTronco: 0.12, acesa: true, derrubavel: true },
     {
       modelos: ['coqueiro'], lado: 'direita', afastamento: 12.5, espacamento: 30, inicio: 155, fim: 3760,
       variacaoAfastamento: 1.2, variacaoRotacao: 180, escala: [0.85, 1.15], colisor: 'tronco', raioTronco: 0.3,
@@ -134,7 +134,7 @@ export const FASE2_NAVEGANTES: DadosFase = {
 
     // --- avenida (lado da cidade) ----------------------------------------------
     // O braço do poste aponta para a pista: a lâmpada fica sobre o acostamento.
-    { modelos: ['posteRua'], lado: 'esquerda', afastamento: 7.8, espacamento: 40, inicio: 130, fim: 3780, colisor: 'tronco', raioTronco: 0.15, acesa: true },
+    { modelos: ['posteRua'], lado: 'esquerda', afastamento: 7.8, espacamento: 40, inicio: 130, fim: 3780, colisor: 'tronco', raioTronco: 0.15, acesa: true, derrubavel: true },
     // Primeira quadra: casas e prédios baixos. O vão é onde fica o bar.
     {
       modelos: ['casa', 'casa2', 'predioPequeno', 'predioVermelho'], lado: 'esquerda', afastamento: 24, espacamento: 20,
@@ -227,5 +227,44 @@ export const FASE2_NAVEGANTES: DadosFase = {
     // Chegada no pátio do porto, depois do corredor de contêineres.
     { distancia: 4460, lado: 'esquerda', quantidade: 10, comprimento: 26 },
     { distancia: 4460, lado: 'direita', quantidade: 10, comprimento: 26 },
+  ],
+
+  // --- trânsito ---------------------------------------------------------------
+  // Avenida de cidade de praia: táxi, ônibus, lambretas; caminhões do porto.
+  trafego: {
+    quantidade: 12,
+    mesmoSentido: 0.5,
+    inicio: 25,
+    fim: 4800,
+    tipos: [
+      { modelo: 'taxi', peso: 3, velocidade: [55, 80] },
+      { modelo: 'onibus', peso: 2, velocidade: [45, 65] },
+      { modelo: 'vespa', peso: 2, velocidade: [35, 50] },
+      { modelo: 'moto', peso: 2, velocidade: [60, 85] },
+      { modelo: 'caminhao', peso: 2, velocidade: [50, 70] },
+      { modelo: 'foodTruck', peso: 1, velocidade: [40, 55] },
+      { modelo: 'esportivo', peso: 1, velocidade: [70, 100] },
+      { modelo: 'viatura', peso: 1, velocidade: [60, 80] },
+    ],
+  },
+
+  // --- barreiras --------------------------------------------------------------
+  // A orla não tem curva fechada (todas com raio acima de 700 m). As barreiras
+  // marcam o "funil" da entrada do porto. O lado esquerdo depois de 3800 fica
+  // livre de propósito: é por lá que se chega à fresta dos contêineres.
+  barreiras: [
+    { modelo: 'barreiraTransito', lado: 'direita', inicio: 3730, fim: 3795 },
+    { modelo: 'barreiraConcreto', lado: 'esquerda', inicio: 3745, fim: 3795 },
+  ],
+
+  // --- cones e obras --------------------------------------------------------
+  soltos: [
+    // Obra no calçadão: barreiras de plástico, com cones antes e depois.
+    { modelo: 'cone', lado: 'direita', afastamento: 4.8, inicio: 1588, fim: 1596, espacamento: 4 },
+    { modelo: 'barreiraPlastica', lado: 'direita', afastamento: 5.3, inicio: 1600, fim: 1630, espacamento: 2 },
+    { modelo: 'cone', lado: 'direita', afastamento: 4.8, inicio: 1634, fim: 1642, espacamento: 4 },
+    // Cones na entrada do porto, nas duas beiras da pista.
+    { modelo: 'cone', lado: 'esquerda', afastamento: 4.7, inicio: 3760, fim: 3800, espacamento: 8 },
+    { modelo: 'cone', lado: 'direita', afastamento: 4.7, inicio: 3760, fim: 3800, espacamento: 8 },
   ],
 };

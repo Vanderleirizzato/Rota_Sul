@@ -13,7 +13,7 @@ import { criarRenderizador } from '../graphics/Renderizador';
 import { obterModelo } from '../world/CarregadorModelos';
 import { MODELOS, type IdCarro, type InfoModelo } from '../world/assets';
 import { criarPistaTeste } from '../world/PistaTeste';
-import type { Cenario } from '../world/Cenario';
+import type { Cenario, EstadoCarro } from '../world/Cenario';
 import { construirFase } from '../world/Fase';
 import { FASES, FASE_INICIAL, type IdFase } from '../world/levels';
 import { Hud } from '../ui/Hud';
@@ -75,6 +75,12 @@ export class Jogo {
   private trocandoCarro = false;
   private pausado = false;
   private ultimoTempo = performance.now();
+  /** A batida mais forte do carro neste quadro (variação de velocidade em m/s). */
+  private batidaNoQuadro = 0;
+  /** Tempo (s) desde o último som de batida: evita metralhar sons quando o carro raspa. */
+  private tempoDesdeBatida = 0;
+  /** O carro como o cenário enxerga (posição, giro e velocidade), reaproveitado a cada passo. */
+  private readonly estadoCarro: EstadoCarro = { posicao: new Vector3(), rotacao: new Quaternion(), velocidade: new Vector3() };
   private tempoTotal = 0;
 
   // Objetos reaproveitados a cada quadro (evita criar lixo para o coletor).
@@ -163,12 +169,28 @@ export class Jogo {
     const comandos = this.comandosDaCorrida(this.lerComandos());
     const carro = this.carro;
     const fisico = carro.fisico;
+    this.batidaNoQuadro = 0;
     const alfa = this.loop.avancar(dt, (passo) => {
       fisico.guardarEstadoAnterior();
       fisico.atualizar(passo, comandos);
+      const v = fisico.corpo.linvel();
+      this.estadoCarro.posicao.copy(fisico.posicaoAtual);
+      this.estadoCarro.rotacao.copy(fisico.rotacaoAtual);
+      this.estadoCarro.velocidade.set(v.x, v.y, v.z);
+      // O cenário reage ao carro: trânsito anda, e o que ele vai atingir vira objeto solto.
+      this.cenario.passoFisica(passo, this.estadoCarro);
+      const antes = fisico.corpo.linvel();
       this.fisica.passo();
       fisico.guardarEstado();
+      // Batida = a velocidade muda de repente num só passo. Motor e freio
+      // mudam a velocidade aos pouquinhos; só uma pancada muda vários m/s de
+      // uma vez. Só a parte horizontal: pousar de um salto não conta.
+      const depois = fisico.corpo.linvel();
+      const variacao = Math.hypot(depois.x - antes.x, depois.z - antes.z);
+      this.batidaNoQuadro = Math.max(this.batidaNoQuadro, variacao);
+      if (variacao > tuning.batida.limiar) fisico.absorverTranco();
     });
+    this.tocarBatidas(dt);
 
     if (fisico.precisaReposicionar) this.reposicionar();
 
@@ -194,7 +216,7 @@ export class Jogo {
     this.efeitos.ajustarEscala(this.camera.camera, this.renderizador.domElement.height);
     this.iluminacao.seguir(this.posDesenho);
     this.ceu.atualizar(this.camera.camera.position, this.tempoTotal);
-    this.cenario.atualizar(dt, this.camera.camera, this.renderizador.domElement.height, this.posDesenho);
+    this.cenario.atualizar(dt, this.camera.camera, this.renderizador.domElement.height, this.posDesenho, alfa);
     this.atualizarCorrida(dt);
     this.hud.atualizar({
       velocidadeMs: fisico.velocidade,
@@ -209,6 +231,32 @@ export class Jogo {
 
     this.posProcessamento.desenhar();
     this.teclado.fimDoQuadro();
+  }
+
+  /** Som e tremor de câmera: batidas da lataria, cones (plástico), pessoas e postes. */
+  private tocarBatidas(dt: number): void {
+    const b = tuning.batida;
+    this.tempoDesdeBatida += dt;
+    const forca = Math.min((this.batidaNoQuadro - b.limiar) / (b.batidaForte - b.limiar), 1);
+    if (forca > 0 && this.tempoDesdeBatida > 0.15) {
+      this.audio.batida(forca, 'metal');
+      this.camera.tremer(forca);
+      this.tempoDesdeBatida = 0;
+    }
+    const impactos = this.cenario.colherImpactos();
+    if (impactos.plastico > 0) {
+      this.audio.batida(impactos.plastico, 'plastico');
+      // Cone não sacode o carro: só um tremidinho.
+      this.camera.tremer(impactos.plastico * 0.25);
+    }
+    if (impactos.macio > 0) {
+      this.audio.batida(impactos.macio, 'macio');
+      this.camera.tremer(impactos.macio * 0.3);
+    }
+    if (impactos.metal > 0) {
+      this.audio.batida(impactos.metal, 'metal');
+      this.camera.tremer(impactos.metal * 0.6);
+    }
   }
 
   private lerComandos(): ComandosCarro {
@@ -299,6 +347,7 @@ export class Jogo {
     this.indiceNaPista = undefined;
     this.telaFim.esconder();
     this.corrida?.reiniciar();
+    this.cenario.reiniciar();
     // Corrida nova, tanque cheio: senão o nitro gasto na anterior faria falta.
     this.carro.fisico.nitro = 1;
   }

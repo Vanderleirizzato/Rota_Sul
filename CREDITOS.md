@@ -8,13 +8,13 @@ Os nomes no formato `"Nome by Autor - código.glb"` parecem vir do site [Poly Pi
 
 | Modelo | Arquivo | Autor | Licença |
 |---|---|---|---|
-| Carro 1 | `Carro1.glb` | a preencher | a preencher |
-| Carro 2 | `Carro2.glb` | a preencher | a preencher |
+| Carro 1 | `cars/Carro1.glb` | a preencher | a preencher |
+| Carro 2 | `cars/Carro2.glb` | a preencher | a preencher |
 | Ponte de treliça | `Bridge.fbx` (textura não veio junto; pintada de aço no código) | a preencher | a preencher |
 | Arco | `Arch by CreativeTrio` | CreativeTrio | a preencher |
 | Barreira simples | `Barrier Single by Quaternius` | Quaternius | CC0 (domínio público) |
 | Árvore grande | `Big Tree by 3Donimus` | 3Donimus | a preencher |
-| Ônibus | `Bus by Poly by Google` | Poly by Google | CC-BY 3.0 |
+| Ônibus | `cars/Bus by Poly by Google` | Poly by Google | CC-BY 3.0 |
 | Paredão rochoso | `Cliff by Poly by Google` | Poly by Google | CC-BY 3.0 |
 | Barreira de concreto | `Concrete Barrier by J-Toastie` | J-Toastie | a preencher |
 | Contêiner verde | `Container Green by Quaternius` | Quaternius | CC0 (domínio público) |
@@ -29,11 +29,15 @@ Os nomes no formato `"Nome by Autor - código.glb"` parecem vir do site [Poly Pi
 | Contêiner | `Shipping Container by Clint Chilcott` | Clint Chilcott | a preencher |
 | Poste | `Street Light by Quaternius` | Quaternius | CC0 (domínio público) |
 | Poste lampião | `Street Objects - Lamp Post by Ev Amitay` | Ev Amitay | a preencher |
-| Food truck | `Sushi Truck by Quaternius` | Quaternius | CC0 (domínio público) |
-| Táxi | `Taxi by Quaternius` | Quaternius | CC0 (domínio público) |
+| Food truck | `cars/Sushi Truck by Quaternius` | Quaternius | CC0 (domínio público) |
+| Táxi | `cars/Taxi by Quaternius` | Quaternius | CC0 (domínio público) |
 | Barreira de trânsito | `Traffic Barrier by Quaternius` | Quaternius | CC0 (domínio público) |
 | Árvore | `Tree by Quaternius` | Quaternius | CC0 (domínio público) |
-| Caminhão | `Truck by Quaternius` | Quaternius | CC0 (domínio público) |
+| Caminhão | `cars/Truck by Quaternius` | Quaternius | CC0 (domínio público) |
+| Viatura | `cars/Police Car by Kay Lousberg` | Kay Lousberg | a preencher |
+| Esportivo | `cars/Sports Car by Quaternius` | Quaternius | CC0 (domínio público) |
+| Moto | `cars/Motorcycle by Poly by Google - 5_MTCnqfUTr` | Poly by Google | CC-BY 3.0 |
+| Vespa | `cars/Vespa by Jasmine Roberts` | Jasmine Roberts | a preencher |
 | Árvore com cipós | `Vine Covered Tree by Zacharylll` | Zacharylll | a preencher |
 | Aventureiro | `pessoas e Insetos/Adventurer by Quaternius - 5EGWBMpuXq` | Quaternius | CC0 (domínio público) |
 | Aventureira | `pessoas e Insetos/Adventurer by Quaternius - ZwF0K7WBmu` | Quaternius | CC0 (domínio público) |

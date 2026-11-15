@@ -93,6 +93,8 @@ export interface FileiraFase {
   raioTronco?: number;
   /** Poste aceso: uma lâmpada que brilha no ponto `lampada` do manifesto. */
   acesa?: boolean;
+  /** O carro derruba (postes): batendo rápido, ele tomba em vez de parar o carro. Precisa de colisor 'tronco'. */
+  derrubavel?: boolean;
 }
 
 /** Mar de um dos lados da pista, com praia descendo até a água. */
@@ -175,5 +177,58 @@ export interface DadosFase {
   patios?: DadosPatio[];
   plateia: DadosPlateia[];
   andarilhos?: DadosAndarilhos;
-  // O tráfego (carros, ônibus, caminhões) entra na Etapa 4.
+  trafego?: DadosTrafego;
+  /** Barreiras fixas na beira das curvas perigosas. */
+  barreiras?: BarreiraFase[];
+  /** Cones e barreiras de plástico que voam quando o carro bate. */
+  soltos?: GrupoSoltos[];
+}
+
+/** Um tipo de veículo do trânsito. */
+export interface TipoVeiculo {
+  modelo: IdModelo;
+  /** Chance relativa de aparecer (um tipo com peso 2 aparece o dobro de um com peso 1). */
+  peso: number;
+  /** Velocidade (km/h) sorteada entre os dois valores. */
+  velocidade: [min: number, max: number];
+}
+
+/**
+ * Trânsito: veículos nas duas mãos da pista. Só existem perto do jogador:
+ * nascem longe (fora da vista) e somem quando ficam para trás.
+ */
+export interface DadosTrafego {
+  /** Quantos veículos ao mesmo tempo em volta do jogador. Mais: estrada mais cheia (e mais pesada). */
+  quantidade: number;
+  /** Fração (0 a 1) que vai no mesmo sentido do jogador; o resto vem na contramão. */
+  mesmoSentido: number;
+  /** Trecho da pista (m) onde há trânsito. */
+  inicio: number;
+  fim: number;
+  tipos: TipoVeiculo[];
+}
+
+/**
+ * Fileira de barreiras FIXAS na beira do acostamento, de `inicio` a `fim`.
+ * O colisor é um muro contínuo: o carro raspa e desliza, sem enroscar nas emendas.
+ */
+export interface BarreiraFase {
+  modelo: IdModelo;
+  lado: Lado;
+  inicio: number;
+  fim: number;
+}
+
+/** Cones ou barreiras de plástico SOLTOS (a física move), um a cada `espacamento` metros. */
+export interface GrupoSoltos {
+  modelo: 'cone' | 'barreiraPlastica';
+  lado: Lado;
+  /** Distância (m) do centro da pista. 4,6 = na faixa branca da beira (largura 8). */
+  afastamento: number;
+  inicio: number;
+  fim: number;
+  espacamento: number;
+  /** Rotação extra em Y (graus). 0 = de frente para a pista (a barreira fica ao longo dela);
+   *  90 = atravessada, fechando a faixa. */
+  rotacao?: number;
 }

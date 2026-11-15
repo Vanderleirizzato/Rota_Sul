@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import { Quaternion, Vector3 } from 'three';
 import { tuning } from '../config/tuning';
+import { GRUPO_RAIOS_RODAS } from './MundoFisico';
 
 // =============================================================================
 // VEÍCULO POR RAYCAST
@@ -134,6 +135,18 @@ export class VeiculoFisico {
    * Massa, centro de massa e inércia, calculados a partir do tuning.
    * Chamado de novo quando o painel F2 muda esses valores.
    */
+  /**
+   * Chamado no passo em que o carro levou uma pancada: tira parte da rotação
+   * que empina ou deita o carro (eixos X e Z do mundo), mas mantém o giro em
+   * torno do eixo vertical. Assim a batida faz o carro rodopiar e quicar para
+   * trás, sem virá-lo de ponta-cabeça. Ver tuning.batida.absorverTranco.
+   */
+  absorverTranco(): void {
+    const w = this.corpo.angvel();
+    const resta = 1 - tuning.batida.absorverTranco;
+    this.corpo.setAngvel({ x: w.x * resta, y: w.y, z: w.z * resta }, true);
+  }
+
   aplicarMassa(): void {
     const { massa, alturaCentroMassa, multiplicadorInercia } = tuning.chassi;
     const r = this.geometria.rodas;
@@ -177,7 +190,7 @@ export class VeiculoFisico {
     this.aplicarParametrosRodas();
     this.atualizarDirecao(dt, comandos.direcao);
     this.atualizarMotorEFreios(dt, comandos);
-    this.controle.updateVehicle(dt);
+    this.controle.updateVehicle(dt, undefined, GRUPO_RAIOS_RODAS);
     this.aplicarBarraEstabilizadora(dt);
     this.aplicarDownforce(dt);
     this.aplicarArrastoGrama(dt);

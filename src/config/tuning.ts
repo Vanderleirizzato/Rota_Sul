@@ -234,6 +234,84 @@ export const tuning = {
     alturaNoMar: 0.3,
   },
 
+  trafego: {
+    /** Os veículos nascem pelo menos a esta distância (m) do jogador, longe o
+     *  bastante para ninguém ver eles "brotarem". Mais baixo: trânsito mais denso perto. */
+    distanciaCriar: 260,
+    /** Além desta distância (m) do jogador, o veículo some (libera memória e física). */
+    distanciaSumir: 420,
+    /** Folga mínima (m) que um veículo deixa para quem está na frente, parado. */
+    folgaMinima: 8,
+    /** Segundos de "distância de segurança": a folga cresce com a velocidade.
+     *  Mais alto: motoristas mais cautelosos, filas mais espaçadas. */
+    tempoSeguranca: 1.2,
+    /** Aceleração (m/s²) dos veículos ao retomar a velocidade. */
+    aceleracao: 2.5,
+    /** Frenagem (m/s²). Mais baixo: eles demoram a parar (e você bate mais na traseira). */
+    frenagem: 7,
+    /**
+     * Peso dos veículos (kg por m³ da "caixa" de cada um). O peso sai do
+     * tamanho: um táxi fica com ~1,1 t, um ônibus com ~15 t, uma moto com ~300 kg.
+     * Mais alto: o trânsito fica "duro", você bate e quase não mexe nada.
+     */
+    densidade: 130,
+    /** Atrito de um veículo atingido (que virou "destroço" da física). Baixo
+     *  porque as rodas dele ainda rolam: assim dá para empurrá-lo. Mais alto:
+     *  pesado de empurrar, como um carro de freio de mão puxado. */
+    atritoAposBatida: 0.15,
+    /** Arrasto do destroço: freia mais quanto mais rápido ele vai. Segura o
+     *  carro que voou numa batida a 180 km/h, sem atrapalhar o empurrão devagar.
+     *  Mais alto: o destroço para mais perto. */
+    arrastoAposBatida: 0.7,
+    /** Giro (rad/s) que tomba motos e lambretas atingidas. 0 = elas ficam em pé. */
+    tombarDuasRodas: 2.5,
+  },
+
+  pessoas: {
+    /** Velocidade (km/h) a partir da qual encostar o carro derruba a pessoa. */
+    velocidadeDerrubar: 5,
+    /** Fração da velocidade do carro com que a pessoa é empurrada. */
+    empurrao: 0.35,
+    /** Segundos caída antes de levantar e voltar a andar. */
+    tempoCaida: 3,
+  },
+
+  postes: {
+    /** Abaixo desta velocidade (km/h) o poste aguenta: o carro só encosta. */
+    velocidadeDerrubar: 15,
+    /** Peso (kg) do poste solto. Mais pesado: freia mais o carro na batida e voa menos. */
+    massa: 150,
+    /** "Empurrão" de tombo (rad/s por m/s do carro): inclina o poste para longe
+     *  do carro. Mais alto: cai mais rápido; 0 = só a batida decide para onde cai. */
+    empurrao: 0.04,
+  },
+
+  objetosSoltos: {
+    /** Massa (kg) de um cone. Mais leve: voa mais longe na batida. */
+    massaCone: 3,
+    /** Massa (kg) de uma barreira de plástico (vazia, sem água). */
+    massaBarreiraPlastica: 10,
+  },
+
+  batida: {
+    /** Variação de velocidade (m/s) num único passo de física para contar
+     *  como batida. Mais baixo: até encostões leves fazem barulho. */
+    limiar: 2,
+    /** Variação (m/s) de uma batida "máxima": som no volume total e tremor máximo. */
+    batidaForte: 14,
+    /** Quanto a câmera treme (m) na batida mais forte. 0 = sem tremor. */
+    tremorCamera: 0.35,
+    /** Rapidez com que o tremor some. Mais alto: tremor mais curto. */
+    amortecimentoTremor: 6,
+    /**
+     * Quanto do "tranco" que empina ou deita o carro é absorvido na batida
+     * (0 a 1). A pancada acontece na altura do para-choque, acima do centro de
+     * massa, e faz o carro empinar. 1 = o carro só roda no plano (arcade);
+     * 0 = física pura (bate num caminhão e capota com facilidade).
+     */
+    absorverTranco: 0.85,
+  },
+
   corrida: {
     /** Segundos de contagem regressiva antes da largada (3, 2, 1...). */
     contagemRegressiva: 3,

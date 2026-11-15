@@ -121,6 +121,50 @@ export class AudioCarro {
     osc.stop(agora + duracao);
   }
 
+  /**
+   * Som de batida, montado na hora (não há arquivo de áudio):
+   * - um "tum" grave: uma onda senoidal que despenca de tom, o corpo da pancada;
+   * - um estalo de ruído filtrado: a lataria (metal), o plástico, ou um
+   *   "puf" abafado (macio: alguém sendo derrubado).
+   * `intensidade` de 0 a 1 controla o volume e quanto o estalo dura.
+   */
+  batida(intensidade: number, material: 'metal' | 'plastico' | 'macio'): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.saida || !this.ruido || intensidade <= 0) return;
+    const agora = ctx.currentTime;
+    const metal = material === 'metal';
+    const macio = material === 'macio';
+    const volume = (0.25 + 0.75 * intensidade) * (macio ? 0.6 : 1);
+
+    const tum = ctx.createOscillator();
+    tum.type = 'sine';
+    tum.frequency.setValueAtTime(metal ? 120 : macio ? 90 : 260, agora);
+    tum.frequency.exponentialRampToValueAtTime(metal ? 40 : macio ? 45 : 120, agora + 0.25);
+    const volTum = ctx.createGain();
+    volTum.gain.setValueAtTime(volume * (metal || macio ? 0.9 : 0.35), agora);
+    volTum.gain.exponentialRampToValueAtTime(0.001, agora + 0.3);
+    tum.connect(volTum).connect(this.saida);
+    tum.start(agora);
+    tum.stop(agora + 0.32);
+
+    // Metal: ruído médio-grave e mais longo (chacoalha). Plástico: agudo e curto ("toc").
+    const duracao = metal ? 0.18 + 0.35 * intensidade : 0.12;
+    const estalo = ctx.createBufferSource();
+    estalo.buffer = this.ruido;
+    const filtro = ctx.createBiquadFilter();
+    // Macio: só os graves do ruído (lowpass), como um saco caindo.
+    filtro.type = macio ? 'lowpass' : 'bandpass';
+    filtro.frequency.value = metal ? 900 : macio ? 350 : 2200;
+    filtro.Q.value = metal ? 0.8 : macio ? 0.7 : 2.5;
+    const volEstalo = ctx.createGain();
+    volEstalo.gain.setValueAtTime(volume * (metal ? 0.8 : 0.4), agora);
+    volEstalo.gain.exponentialRampToValueAtTime(0.001, agora + duracao);
+    // Começa num ponto sorteado do ruído: duas batidas seguidas não soam idênticas.
+    estalo.connect(filtro).connect(volEstalo).connect(this.saida);
+    estalo.start(agora, Math.random() * 1.5);
+    estalo.stop(agora + duracao + 0.02);
+  }
+
   // ---------------------------------------------------------------------------
 
   private criarMotor(ctx: AudioContext, destino: AudioNode) {
