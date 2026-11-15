@@ -34,6 +34,8 @@ const LARGURA_PNEU_SOBRE_DIAMETRO = 0.45;
 export class CarroVisual {
   readonly objeto: Group;
   readonly geometria: GeometriaCarro;
+  /** Saídas do escapamento (espaço local do carro): de onde sai o fogo do nitro. */
+  readonly escapamentos: Vector3[];
   private readonly rodas: RodaVisual[] = [];
 
   constructor(modelo: Group, nomesRodas: RodasDoModelo) {
@@ -83,6 +85,18 @@ export class CarroVisual {
       raioRoda: raio,
       ...this.medirCarroceria(),
     };
+    this.escapamentos = this.estimarEscapamentos();
+  }
+
+  /** Todas as malhas que fazem parte das rodas (para receberem material de borracha). */
+  malhasDasRodas(): Set<Mesh> {
+    const malhas = new Set<Mesh>();
+    for (const roda of this.rodas) {
+      roda.pivoGiro.traverse((o) => {
+        if (o instanceof Mesh) malhas.add(o);
+      });
+    }
+    return malhas;
   }
 
   /** Posiciona o carro e as rodas para este quadro. */
@@ -99,6 +113,18 @@ export class CarroVisual {
       roda.pivoDirecao.rotation.y = doEixo[0].anguloDirecao;
       roda.pivoGiro.quaternion.setFromAxisAngle(roda.eixo, doEixo[0].giro);
     }
+  }
+
+  /**
+   * Os modelos não marcam onde fica o escapamento, então estimamos: dois canos
+   * na traseira, embaixo do para-choque. Se um carro novo precisar de outro
+   * lugar, este é o ponto para trocar por coordenadas do manifesto.
+   */
+  private estimarEscapamentos(): Vector3[] {
+    const { centroCaixa: c, meiasMedidas: m } = this.geometria;
+    const traseira = c.z - m.z / 0.95; // desfaz o encolhimento de 5% da caixa
+    const altura = this.geometria.raioRoda * 0.9;
+    return [new Vector3(m.x * 0.45, altura, traseira), new Vector3(-m.x * 0.45, altura, traseira)];
   }
 
   /** Para uma peça de eixo inteiro, estima o centro da roda de um dos lados. */

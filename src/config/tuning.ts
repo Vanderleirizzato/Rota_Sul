@@ -160,6 +160,23 @@ export const tuning = {
     recargaDrift: 0.2,
   },
 
+  transmissao: {
+    // A transmissão é "de mentira": não muda a força do carro (essa vem da
+    // curva do motor), só decide a marcha e o giro mostrados no conta-giros e
+    // ouvidos no som do motor.
+    /** Velocidade (km/h) em que cada marcha chega ao giro máximo. Mais marchas
+     *  ou marchas mais curtas: mais trocas, som mais "nervoso". */
+    velocidadeMaximaMarchas: [45, 80, 115, 150, 190, 250],
+    /** Giro do motor parado (rpm). */
+    rpmMarchaLenta: 900,
+    /** Giro máximo (rpm). Acima de 85% disso o conta-giros fica vermelho. */
+    rpmMaximo: 7200,
+    /** Sobe a marcha ao passar deste giro. */
+    rpmTrocaSubida: 6600,
+    /** Desce a marcha ao cair abaixo deste giro. */
+    rpmTrocaDescida: 3200,
+  },
+
   reposicionamento: {
     /** Segundos de cabeça para baixo (e parado) antes de desvirar sozinho. */
     tempoCapotado: 2.5,

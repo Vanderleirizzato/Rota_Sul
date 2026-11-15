@@ -65,6 +65,10 @@ export class VeiculoFisico {
   nitro = 1;
   nitroLigado = false;
   derrapando = false;
+  /** Intensidade da derrapagem (0 a 1), para fumaça e som dos pneus. */
+  intensidadeDerrapagem = 0;
+  /** O jogador está segurando o acelerador (para o som do motor). */
+  acelerando = false;
   /** Pedido de reposicionamento (o carro capotou ou caiu). Quem decide para onde é o Jogo. */
   precisaReposicionar = false;
 
@@ -164,6 +168,8 @@ export class VeiculoFisico {
 
   /** Um passo de física: lê os comandos e aplica forças. */
   atualizar(dt: number, comandos: ComandosCarro): void {
+    this.acelerando = comandos.acelerar;
+    this.nitroLigado = false; // religado em forcaParaFrente() se o jogador acelera com nitro
     this.aplicarParametrosRodas();
     this.atualizarDirecao(dt, comandos.direcao);
     this.atualizarMotorEFreios(dt, comandos);
@@ -208,6 +214,24 @@ export class VeiculoFisico {
     // Sem isso, a interpolação "arrastaria" o carro da posição velha à nova.
     this.posicaoAnterior.copy(this.posicaoAtual);
     this.rotacaoAnterior.copy(this.rotacaoAtual);
+  }
+
+  /** Ponto onde a roda toca o chão (mundo), ou null se ela está no ar. */
+  pontoContato(i: number): Vector3 | null {
+    if (!this.controle.wheelIsInContact(i)) return null;
+    const p = this.controle.wheelContactPoint(i);
+    return p ? new Vector3(p.x, p.y, p.z) : null;
+  }
+
+  /** Alguma roda está no chão? */
+  get noChao(): boolean {
+    return [0, 1, 2, 3].some((i) => this.controle.wheelIsInContact(i));
+  }
+
+  /** Velocidade do carro como vetor (m/s, no mundo). */
+  velocidadeLinear(): Vector3 {
+    const v = this.corpo.linvel();
+    return new Vector3(v.x, v.y, v.z);
   }
 
   /** Ângulo do carro em torno de Y (para onde ele aponta no plano). */
@@ -351,6 +375,8 @@ export class VeiculoFisico {
     const lateral = Math.abs(esquerda.dot(new Vector3(vel.x, vel.y, vel.z)));
     const algumaTraseiraNoChao = TRASEIRAS.some((i) => this.controle.wheelIsInContact(i));
     this.derrapando = algumaTraseiraNoChao && lateral > tuning.drift.velocidadeLateralMinima;
+    // De 0 (no limite) a 1 (bem de lado). Os 8 m/s extras são só a escala do efeito.
+    this.intensidadeDerrapagem = algumaTraseiraNoChao ? Math.min(1, Math.max(0, (lateral - tuning.drift.velocidadeLateralMinima) / 8)) : 0;
   }
 
   /**

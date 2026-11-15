@@ -1,0 +1,111 @@
+/* HUD arcade. Tudo em position: fixed por cima do jogo; pointer-events: none
+   para os cliques passarem direto para o jogo. */
+
+.hud {
+  position: fixed;
+  right: 24px;
+  bottom: 20px;
+  width: 240px;
+  pointer-events: none;
+  user-select: none;
+  font-family: ui-monospace, 'Consolas', monospace;
+  color: #fff;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.hud-mostrador { position: relative; width: 240px; height: 200px; }
+.hud-mostrador svg { position: absolute; inset: 0; overflow: visible; }
+
+.hud-fundo { fill: rgba(10, 14, 22, 0.55); }
+.hud-trilho { fill: none; stroke: rgba(255, 255, 255, 0.15); stroke-width: 10; }
+.hud-faixa-vermelha { fill: none; stroke: #ff2d3d; stroke-width: 10; }
+.hud-giro { fill: none; stroke: #33e1ff; stroke-width: 10; stroke-linecap: round; transition: stroke 0.1s; }
+.hud-giro.no-limite { stroke: #ff2d3d; }
+.hud-marca { stroke: rgba(255, 255, 255, 0.7); stroke-width: 2; }
+.hud-numero { fill: rgba(255, 255, 255, 0.75); font-size: 11px; text-anchor: middle; dominant-baseline: middle; }
+.hud-ponteiro { stroke: #ffcc33; stroke-width: 3; stroke-linecap: round; }
+
+.hud-velocidade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 72px;
+  text-align: center;
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+.hud-unidade { display: block; font-size: 12px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
+
+.hud-marcha {
+  position: absolute;
+  left: 50%;
+  top: 140px;
+  transform: translateX(-50%);
+  min-width: 34px;
+  padding: 2px 8px;
+  border: 2px solid #ffcc33;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffcc33;
+}
+
+.hud-nitro { margin-top: 6px; }
+.hud-nitro-rotulo { font-size: 12px; letter-spacing: 3px; opacity: 0.8; }
+.hud-nitro-barra {
+  height: 12px;
+  margin-top: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  background: rgba(10, 14, 22, 0.55);
+  overflow: hidden;
+}
+.hud-nitro-nivel {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  background: linear-gradient(90deg, #1f6bff, #33e1ff);
+}
+.hud-nitro.ligado .hud-nitro-nivel {
+  background: linear-gradient(90deg, #ff6a00, #ffe14d);
+  animation: hud-piscar 0.12s infinite alternate;
+}
+@keyframes hud-piscar { to { opacity: 0.6; } }
+
+.hud-drift {
+  position: fixed;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  font-family: ui-monospace, monospace;
+  font-size: 34px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 4px;
+  color: #ffcc33;
+  text-shadow: 0 0 12px rgba(255, 140, 0, 0.8);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+.hud-drift.visivel { opacity: 1; }
+
+.hud-dicas {
+  position: fixed;
+  left: 16px;
+  bottom: 14px;
+  font: 13px/1.5 system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+}
+.hud-dicas kbd {
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  font: inherit;
+}

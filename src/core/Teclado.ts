@@ -16,6 +16,7 @@ export const TECLAS = {
   carro1: ['Digit1', 'Numpad1'],
   carro2: ['Digit2', 'Numpad2'],
   painelDev: ['F2'],
+  pausar: ['Escape'],
 } as const;
 
 export type Acao = keyof typeof TECLAS;

@@ -1,19 +1,21 @@
 import { ACESFilmicToneMapping, PCFShadowMap, SRGBColorSpace, WebGLRenderer } from 'three';
 
-/** Limite do devicePixelRatio: telas 3x custariam 9 vezes mais pixels que 1x. */
-const PIXEL_RATIO_MAXIMO = 2;
+/** Exposição geral da imagem (como a de uma câmera). Mais alto: tudo mais claro. */
+const EXPOSICAO = 0.5;
 
 export function criarRenderizador(): WebGLRenderer {
-  const r = new WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  r.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_MAXIMO));
-  r.setSize(window.innerWidth, window.innerHeight);
+  // antialias: false porque a suavização das bordas é feita pelo SMAA no
+  // pós-processamento (o antialias do navegador não age nas imagens intermediárias).
+  const r = new WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
   r.shadowMap.enabled = true;
   // Sombra suave (PCF). Até o three r17x existia o PCFSoftShadowMap; nas versões
   // novas ele foi removido porque o PCFShadowMap comum já filtra suave.
   r.shadowMap.type = PCFShadowMap;
   r.outputColorSpace = SRGBColorSpace;
-  // Tone mapping "cinematográfico": evita que o sol estoure em branco chapado.
+  // Tone mapping "cinematográfico": o céu e o sol têm brilho muito acima do que
+  // a tela mostra; o ACES comprime isso sem estourar tudo em branco chapado.
   r.toneMapping = ACESFilmicToneMapping;
+  r.toneMappingExposure = EXPOSICAO;
   document.body.appendChild(r.domElement);
   return r;
 }

@@ -1,36 +1,52 @@
 import { Color, DirectionalLight, Fog, HemisphereLight, Scene, Vector3 } from 'three';
+import type { ConfigQualidade } from '../config/quality';
 
-// Iluminação básica da pista de teste. O céu procedural e a qualidade das
-// sombras vêm na Etapa 1B; por enquanto é um fundo azul e um sol simples.
+// Luz do sol (com sombra) + luz do céu. A direção do sol é a mesma usada pelo
+// céu procedural, para a sombra cair do lado certo do brilho do céu.
 
-/** Direção de onde vem o sol (não precisa ser unitária). */
-const DIRECAO_SOL = new Vector3(-0.5, 1, -0.35).normalize();
-/** Lado da área coberta pela sombra (m). Menor = sombra mais nítida. */
-const AREA_SOMBRA = 50;
+/** Direção de onde vem o sol na pista de teste: manhã, alto e à esquerda. */
+export const DIRECAO_SOL_TESTE = new Vector3(-0.5, 0.8, -0.35).normalize();
+/** Cor da neblina: perto da cor do horizonte, para o chão "sumir" no céu. */
+const COR_NEBLINA = 0xbcd2e4;
 
 export class Iluminacao {
   private readonly sol: DirectionalLight;
+  private readonly neblina: Fog;
 
-  constructor(cena: Scene) {
-    cena.background = new Color(0x9cc8ee);
-    cena.fog = new Fog(0x9cc8ee, 200, 900);
+  constructor(cena: Scene, private readonly direcaoSol: Vector3) {
+    this.neblina = new Fog(COR_NEBLINA, 100, 700);
+    cena.fog = this.neblina;
+    cena.background = new Color(COR_NEBLINA); // só aparece se o céu falhar
 
     // Luz do "céu" (azulada de cima) e do "chão" (amarronzada de baixo).
-    cena.add(new HemisphereLight(0xcfe6ff, 0x6b5a45, 1.2));
+    cena.add(new HemisphereLight(0xcfe6ff, 0x6b5a45, 1.0));
 
-    this.sol = new DirectionalLight(0xfff2dd, 2.6);
+    this.sol = new DirectionalLight(0xfff0dc, 5.0);
     this.sol.castShadow = true;
-    this.sol.shadow.mapSize.set(2048, 2048);
-    const cam = this.sol.shadow.camera;
-    cam.left = -AREA_SOMBRA / 2;
-    cam.right = AREA_SOMBRA / 2;
-    cam.top = AREA_SOMBRA / 2;
-    cam.bottom = -AREA_SOMBRA / 2;
-    cam.near = 1;
-    cam.far = 200;
+    this.sol.shadow.camera.near = 1;
+    this.sol.shadow.camera.far = 250;
     this.sol.shadow.bias = -0.0005;
     this.sol.shadow.normalBias = 0.02;
     cena.add(this.sol, this.sol.target);
+  }
+
+  aplicarQualidade(q: ConfigQualidade): void {
+    this.sol.castShadow = q.sombras;
+    const cam = this.sol.shadow.camera;
+    cam.left = -q.areaSombra / 2;
+    cam.bottom = -q.areaSombra / 2;
+    cam.right = q.areaSombra / 2;
+    cam.top = q.areaSombra / 2;
+    cam.updateProjectionMatrix();
+    if (this.sol.shadow.mapSize.x !== q.tamanhoSombra) {
+      this.sol.shadow.mapSize.set(q.tamanhoSombra, q.tamanhoSombra);
+      // Joga fora o mapa antigo; o three cria um novo no tamanho certo.
+      this.sol.shadow.map?.dispose();
+      this.sol.shadow.map = null;
+    }
+    // A neblina termina onde paramos de desenhar: nada "aparece do nada".
+    this.neblina.far = q.distanciaDesenho;
+    this.neblina.near = q.distanciaDesenho * 0.15;
   }
 
   /**
@@ -40,6 +56,6 @@ export class Iluminacao {
    */
   seguir(alvo: Vector3): void {
     this.sol.target.position.copy(alvo);
-    this.sol.position.copy(alvo).addScaledVector(DIRECAO_SOL, 100);
+    this.sol.position.copy(alvo).addScaledVector(this.direcaoSol, 100);
   }
 }

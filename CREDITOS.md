@@ -43,6 +43,20 @@ Os nomes no formato `"Nome by Autor - código.glb"` parecem vir do site [Poly Pi
 | Escorpião | `pessoas e Insetos/Scorpion by jeremy` | jeremy | a preencher |
 | Aranha | `pessoas e Insetos/Spider by Quaternius` | Quaternius | CC0 (domínio público) |
 | Estátua de cervo | `pessoas e Insetos/Stag Statue by Quaternius` | Quaternius | CC0 (domínio público) |
+| Prédio de apartamentos | `city/Apartment building by Poly by Google` | Poly by Google | CC-BY 3.0 |
+| Bar | `city/Bar by Poly by Google` | Poly by Google | CC-BY 3.0 |
+| Prédio vermelho | `city/Building Red by J-Toastie` | J-Toastie | a preencher |
+| Casa | `city/House by Poly by Google` | Poly by Google | CC-BY 3.0 |
+| Casa | `city/House by Quaternius` | Quaternius | CC0 (domínio público) |
+| Prédio grande | `city/Large Building by Kenney` | Kenney | CC0 (domínio público) |
+| Prédio baixo | `city/Low Building by Kenney` | Kenney | CC0 (domínio público) |
+| Prédio pequeno | `city/Small Building by Kenney` | Kenney | CC0 (domínio público) |
+| Outdoor (3 modelos) | `outdoor/Billboard by Poly by Google` | Poly by Google | CC-BY 3.0 |
+
+## Imagens dos outdoors (`public/models/outdoor/`)
+
+- Propaganda e logo da **Dale Congelados Saudáveis** (Navegantes/SC): cedidos pela própria empresa.
+- Foto do outdoor "Moda Verão 2027": arquivo pessoal da família (não vai para o GitHub).
 
 ## Bibliotecas
 

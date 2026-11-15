@@ -1,5 +1,6 @@
 import GUI from 'lil-gui';
 import { tuning } from '../config/tuning';
+import { QUALIDADES, QUALIDADE_PADRAO, type NivelQualidade } from '../config/quality';
 
 // Painel do Modo Dev: mexe nos valores de tuning.ts com o jogo rodando.
 //
@@ -22,13 +23,23 @@ const FAIXAS: Record<string, [number, number]> = {
 
 export class PainelDev {
   private readonly gui: GUI;
+  /** Quadros por segundo, mostrados no topo do painel (atualizado pelo Jogo). */
+  private readonly medidor = { fps: 0 };
+  private quadros = 0;
+  private inicioContagem = performance.now();
 
   /**
    * @param aoMudarMassa chamado quando muda algo que exige recalcular a massa do
    *   carro (o resto é lido a cada passo e não precisa de aviso).
+   * @param aoMudarQualidade chamado ao escolher outra qualidade gráfica.
    */
-  constructor(aoMudarMassa: () => void) {
+  constructor(aoMudarMassa: () => void, aoMudarQualidade: (nivel: NivelQualidade) => void) {
     this.gui = new GUI({ title: 'Modo Dev: tuning (F2)' });
+    // .listen() faz o painel reler o valor sozinho; .disable() impede edição.
+    this.gui.add(this.medidor, 'fps').name('FPS').listen().disable();
+    // Seletor de qualidade (provisório: na Etapa 5 ele vai para o menu).
+    const opcoes = Object.fromEntries(Object.entries(QUALIDADES).map(([nivel, q]) => [q.nome, nivel]));
+    this.gui.add({ qualidade: QUALIDADE_PADRAO }, 'qualidade', opcoes).name('Qualidade').onChange(aoMudarQualidade);
     for (const [secao, valores] of Object.entries(tuning)) {
       const pasta = this.gui.addFolder(secao);
       pasta.close();
@@ -43,6 +54,17 @@ export class PainelDev {
     }
     this.gui.add({ copiar: () => this.copiarValores() }, 'copiar').name('📋 Copiar valores');
     this.gui.hide();
+  }
+
+  /** Chamar uma vez por quadro: conta os quadros e atualiza o FPS a cada meio segundo. */
+  contarQuadro(): void {
+    this.quadros++;
+    const agora = performance.now();
+    if (agora - this.inicioContagem >= 500) {
+      this.medidor.fps = Math.round((this.quadros * 1000) / (agora - this.inicioContagem));
+      this.quadros = 0;
+      this.inicioContagem = agora;
+    }
   }
 
   alternar(): void {
