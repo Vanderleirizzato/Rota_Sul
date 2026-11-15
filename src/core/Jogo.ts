@@ -131,8 +131,9 @@ export class Jogo {
   /**
    * Monta o jogo na fase pedida no endereço: ?fase=teste abre a pista de
    * teste de física; sem nada, abre a fase inicial.
+   * `aoCompilar`: avisado quando os downloads acabam e começa a preparação dos gráficos.
    */
-  static async criar(): Promise<Jogo> {
+  static async criar(aoCompilar?: () => void): Promise<Jogo> {
     const pedida = new URLSearchParams(window.location.search).get('fase');
     const idFase: IdFase | 'teste' = pedida === 'teste' ? 'teste' : pedida && pedida in FASES ? (pedida as IdFase) : FASE_INICIAL;
     // A luz precisa existir antes da cena; o resto da fase vem depois.
@@ -149,6 +150,7 @@ export class Jogo {
     // Compila agora os "programas" de todos os materiais da fase. Sem isso, o
     // navegador compila cada um na 1ª vez que o objeto aparece na tela, e o
     // jogo dá um engasgo (o fps despenca por um instante) no meio da corrida.
+    aoCompilar?.();
     await jogo.renderizador.compileAsync(jogo.cena, jogo.camera.camera);
     return jogo;
   }

@@ -10,7 +10,21 @@ canvas { display: block; }
 #carregando {
   position: fixed;
   inset: 0;
+  /* Fundo e camada próprios: cobre o HUD, que já existe por baixo enquanto a fase carrega. */
+  z-index: 50;
+  background: #000;
   display: grid;
   place-items: center;
   font-size: 1.5rem;
 }
+.carregando-caixa { width: min(420px, 80vw); text-align: center; }
+.carregando-titulo {
+  font: 900 56px ui-monospace, Consolas, monospace;
+  letter-spacing: 8px;
+  color: #ffcc33;
+  margin-bottom: 18px;
+}
+.carregando-etapa { font-size: 1.1rem; margin-bottom: 12px; }
+.carregando-trilho { height: 12px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.carregando-barra { height: 100%; width: 0; background: linear-gradient(90deg, #33e1ff, #ffcc33); transition: width 0.2s; }
+.carregando-detalhe { margin-top: 10px; font-size: 0.9rem; opacity: 0.7; }

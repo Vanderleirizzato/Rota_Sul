@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { clone as clonarComEsqueleto } from 'three/addons/utils/SkeletonUtils.js';
 import { MODELOS, type IdModelo, type InfoModelo } from './assets';
+import { registrarProgresso } from './ProgressoDownload';
 
 // Carrega cada modelo UMA vez e devolve cópias.
 //
@@ -44,14 +45,18 @@ export async function obterAnimacoes(id: IdModelo): Promise<AnimationClip[]> {
 async function carregarENormalizar(info: InfoModelo): Promise<ModeloCarregado> {
   let raiz: Group;
   let animacoes: AnimationClip[];
+  // Avisa a barra de carregamento a cada pedaço que chega (ver ProgressoDownload.ts).
+  const aoBaixar = (e: ProgressEvent): void => registrarProgresso(info.arquivo, e.loaded, e.total);
+  registrarProgresso(info.arquivo, 0, 0);
   if (info.arquivo.toLowerCase().endsWith('.fbx')) {
-    raiz = await carregadorFbx.loadAsync(info.arquivo);
+    raiz = await carregadorFbx.loadAsync(info.arquivo, aoBaixar);
     animacoes = raiz.animations;
   } else {
-    const gltf = await carregadorGltf.loadAsync(info.arquivo);
+    const gltf = await carregadorGltf.loadAsync(info.arquivo, aoBaixar);
     raiz = gltf.scene;
     animacoes = gltf.animations;
   }
+  registrarProgresso(info.arquivo, 0, 0, true);
 
   // O "embrulho" é um grupo limpo por fora. Toda correção (rotação, escala,
   // deslocamento) fica na `raiz` lá dentro, então quem usa o modelo pode
