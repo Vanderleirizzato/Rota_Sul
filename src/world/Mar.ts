@@ -49,7 +49,7 @@ export class Mar {
       }),
     );
     // Centro do plano: o meio da pista. Ele é tão grande que cobre tudo.
-    const meio = tracado.pontos[Math.floor(tracado.quantidade / 2)];
+    const meio = tracado.pontos[Math.floor((tracado.indicePrimeiro + tracado.indiceUltimo) / 2)];
     agua.position.set(meio.x, dados.nivel, meio.z);
     // A água recebe sombra (dos navios, do píer), mas não projeta.
     agua.receiveShadow = true;

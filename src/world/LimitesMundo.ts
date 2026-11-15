@@ -16,7 +16,7 @@ import type { Terreno } from './Terreno';
 // =============================================================================
 
 /** Quanto (m) as paredes ficam para dentro da borda do terreno. */
-const RECUO = 16;
+export const RECUO_LIMITES = 16;
 /** Altura das paredes (m): bem mais alta que qualquer montanha, para ninguém pular por cima. */
 const ALTURA = 600;
 /** Espessura das paredes (m): grossa, para o carro em alta velocidade não atravessar num passo de física. */
@@ -24,10 +24,10 @@ const ESPESSURA = 10;
 
 export function colocarLimites(fisica: MundoFisico, terreno: Terreno): void {
   const { minX, maxX, minZ, maxZ } = terreno.limites;
-  const x0 = minX + RECUO;
-  const x1 = maxX - RECUO;
-  const z0 = minZ + RECUO;
-  const z1 = maxZ - RECUO;
+  const x0 = minX + RECUO_LIMITES;
+  const x1 = maxX - RECUO_LIMITES;
+  const z0 = minZ + RECUO_LIMITES;
+  const z1 = maxZ - RECUO_LIMITES;
   const meioX = (x0 + x1) / 2;
   const meioZ = (z0 + z1) / 2;
   const meiaLarguraX = (x1 - x0) / 2 + ESPESSURA;

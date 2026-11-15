@@ -13,6 +13,14 @@ import type { DadosPista, Lado, PontoTracado } from './levels/TiposFase';
 //   - a inclinação lateral (o "banking" das curvas).
 // Tudo que precisa da pista usa estas amostras: o asfalto, o terreno, as
 // árvores, o reposicionamento e o cronômetro.
+//
+// PROLONGAMENTO: para a estrada não "acabar do nada", ela continua reta nas
+// duas pontas até perto da borda do mundo (o asfalto e o leito no terreno vêm
+// juntos, porque saem destas mesmas amostras). Só que acrescentar pontos ANTES
+// do primeiro ponto da fase mudaria todas as distâncias dos dados (largada
+// aos 90 m, peças, plateia...). Por isso guardamos em `inicio` o tamanho do
+// trecho acrescentado e descontamos dele em toda distância: a distância 0
+// continua sendo o primeiro ponto da fase, e o trecho novo fica nas negativas.
 // =============================================================================
 
 /** Distância entre amostras (m). Menor: curvas mais lisas, mais memória. */
@@ -32,6 +40,12 @@ export interface Projecao {
   afastamento: number;
 }
 
+/** Quantos metros a estrada continua reta antes do primeiro ponto e depois do último. */
+export interface Prolongamento {
+  antes: number;
+  depois: number;
+}
+
 export class Tracado {
   readonly espacamento = ESPACAMENTO;
   readonly comprimento: number;
@@ -43,10 +57,16 @@ export class Tracado {
   readonly inclinacoes: number[];
   /** Meia largura do asfalto + acostamento (m): a "beira" da pista. */
   readonly meiaLarguraTotal: number;
+  /** Metros de estrada acrescentados antes do primeiro ponto da fase (ver PROLONGAMENTO no topo). */
+  readonly inicio: number;
+  /** Amostras do primeiro e do último ponto da fase: entre elas, a pista "de verdade". */
+  readonly indicePrimeiro: number;
+  readonly indiceUltimo: number;
 
-  constructor(pontosFase: PontoTracado[], readonly pista: DadosPista) {
+  constructor(pontosFase: PontoTracado[], readonly pista: DadosPista, prolongar: Prolongamento = { antes: 0, depois: 0 }) {
+    const originais = pontosFase.map(([x, y, z]) => new Vector3(x, y, z));
     const curva = new CatmullRomCurve3(
-      pontosFase.map(([x, y, z]) => new Vector3(x, y, z)),
+      prolongarPontas(originais, prolongar),
       false,
       // "centripetal" evita laços e bicos quando os pontos estão a distâncias
       // muito diferentes uns dos outros (o tipo padrão às vezes faz um nó).
@@ -63,6 +83,14 @@ export class Tracado {
     this.esquerdas = this.tangentes.map((t) => new Vector3(t.z, 0, -t.x).normalize());
     this.inclinacoes = this.calcularInclinacoes(pista);
     this.meiaLarguraTotal = pista.largura / 2 + pista.acostamento;
+    this.indicePrimeiro = this.maisProximoEntre(originais[0], 0, n);
+    this.indiceUltimo = this.maisProximoEntre(originais[originais.length - 1], 0, n);
+    this.inicio = this.indicePrimeiro * ESPACAMENTO;
+  }
+
+  /** A menor distância que existe (negativa quando a estrada foi prolongada antes do começo). */
+  get primeiraDistancia(): number {
+    return -this.inicio;
   }
 
   get quantidade(): number {
@@ -71,7 +99,7 @@ export class Tracado {
 
   /** Índice da amostra numa distância (m), limitado ao começo e fim. */
   indiceEm(distancia: number): number {
-    return Math.min(Math.max(Math.round(distancia / ESPACAMENTO), 0), this.pontos.length - 1);
+    return Math.min(Math.max(Math.round((distancia + this.inicio) / ESPACAMENTO), 0), this.pontos.length - 1);
   }
 
   /** Altura da superfície da pista na amostra `i`, a `lateral` metros do centro. */
@@ -92,7 +120,7 @@ export class Tracado {
    * o que faria quem anda devagar "pular" de 2 em 2 metros.)
    */
   posicaoEm(distancia: number, lateral: number, alvo = new Vector3()): Vector3 {
-    const f = Math.min(Math.max(distancia / ESPACAMENTO, 0), this.pontos.length - 1.001);
+    const f = Math.min(Math.max((distancia + this.inicio) / ESPACAMENTO, 0), this.pontos.length - 1.001);
     const i = Math.floor(f);
     const t = f - i;
     const e = this.esquerdas[i];
@@ -135,7 +163,7 @@ export class Tracado {
     const lateral = dx * e.x + dz * e.z;
     return {
       indice: melhor,
-      distancia: melhor * ESPACAMENTO + dx * t.x + dz * t.z,
+      distancia: melhor * ESPACAMENTO - this.inicio + dx * t.x + dz * t.z,
       lateral,
       afastamento: Math.abs(lateral),
     };
@@ -184,6 +212,24 @@ export class Tracado {
       return soma / conta;
     });
   }
+}
+
+/**
+ * Acrescenta um ponto em linha reta antes do primeiro e depois do último,
+ * seguindo a direção da própria estrada naquela ponta (e na mesma altura).
+ */
+function prolongarPontas(pontos: Vector3[], prolongar: Prolongamento): Vector3[] {
+  const resultado = [...pontos];
+  const n = pontos.length;
+  if (prolongar.antes > 0) resultado.unshift(seguirReto(pontos[0], pontos[1], prolongar.antes));
+  if (prolongar.depois > 0) resultado.push(seguirReto(pontos[n - 1], pontos[n - 2], prolongar.depois));
+  return resultado;
+}
+
+/** O ponto `metros` além de `ponta`, na direção que vem de `vizinho` para `ponta`. */
+function seguirReto(ponta: Vector3, vizinho: Vector3, metros: number): Vector3 {
+  const direcao = ponta.clone().sub(vizinho).setY(0).normalize();
+  return ponta.clone().addScaledVector(direcao, metros);
 }
 
 function distanciaHorizontalQuadrada(a: Vector3, b: Vector3): number {

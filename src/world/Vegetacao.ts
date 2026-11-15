@@ -145,7 +145,7 @@ function sortearPosicoes(plantio: Plantio, porKm: number, faixa: [number, number
   const eixoY = new Euler();
 
   for (let k = 0; k < quantidade; k++) {
-    const distancia = sorteio() * tracado.comprimento;
+    const distancia = tracado.primeiraDistancia + sorteio() * tracado.comprimento;
     const lado: Lado = sorteio() < 0.5 ? 'esquerda' : 'direita';
     const afastamento = borda + faixa[0] + sorteio() * (faixa[1] - faixa[0]);
     const p = tracado.pontoAoLado(distancia, lado, afastamento);

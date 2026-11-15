@@ -3,7 +3,7 @@ import type { MundoFisico } from '../physics/MundoFisico';
 import { BIOMAS } from './biomas';
 import type { Cenario, EstadoCarro } from './Cenario';
 import { construirPista } from './ConstrutorPista';
-import type { DadosEstacionamento, DadosFase } from './levels/TiposFase';
+import type { DadosEstacionamento, DadosFase, PontoTracado } from './levels/TiposFase';
 import { barreirasNasPontas, colocarObjetos } from './ObjetosFase';
 import { Plateia } from './Plateia';
 import { Andarilhos } from './Andarilhos';
@@ -11,8 +11,8 @@ import { Rio } from './Rio';
 import { Mar } from './Mar';
 import { colocarFileiras } from './Fileiras';
 import { dentroDePatio } from './Patios';
-import { Terreno } from './Terreno';
-import { Tracado } from './Tracado';
+import { MARGEM_TERRENO, Terreno } from './Terreno';
+import { Tracado, type Prolongamento } from './Tracado';
 import { plantarVegetacao } from './Vegetacao';
 import { colocarBarreiras } from './Barreiras';
 import { ObjetosSoltos } from './ObjetosSoltos';
@@ -21,7 +21,8 @@ import { colocarOutdoors } from './Outdoors';
 import { colocarPortico } from './Portico';
 import { Insetos } from './Insetos';
 import { Trofeu } from './Trofeu';
-import { colocarLimites } from './LimitesMundo';
+import { Bloqueios } from './Bloqueios';
+import { colocarLimites, RECUO_LIMITES } from './LimitesMundo';
 import { Pecas } from './Pecas';
 import { tuning } from '../config/tuning';
 
@@ -38,7 +39,7 @@ const ATRAS_DOS_CARROS = 7;
  * pista, e as árvores precisam do terreno para saber a altura do chão.
  */
 export async function construirFase(dados: DadosFase, cena: Scene, fisica: MundoFisico): Promise<Cenario> {
-  const tracado = new Tracado(dados.tracado, dados.pista);
+  const tracado = new Tracado(dados.tracado, dados.pista, prolongamentos(dados.tracado));
   construirPista(cena, fisica, tracado, dados.largada, dados.chegada);
   const patios = dados.patios ?? [];
   const terreno = new Terreno(cena, fisica, tracado, BIOMAS[dados.bioma], { rio: dados.rio, mar: dados.mar, patios });
@@ -58,11 +59,13 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   const pecas = new Pecas(cena, tracado, terreno, dados.id, dados.pecas ?? []);
 
   // Tudo que depende de baixar arquivos .glb roda em paralelo.
-  const [vegetacao, , postes] = await Promise.all([
+  const [vegetacao, , postes, bloqueios] = await Promise.all([
     // Abaixo da água (rio ou mar) nada nasce.
     plantarVegetacao(cena, fisica, tracado, terreno, BIOMAS[dados.bioma], dados.rio?.nivel ?? dados.mar?.nivel),
     colocarObjetos(cena, fisica, tracado, terreno, dados.objetos),
     colocarFileiras(cena, fisica, tracado, terreno, dados.fileiras ?? []),
+    // Fim da estrada: "pista interditada" nas duas pontas.
+    Bloqueios.criar(cena, fisica, tracado),
     barreirasNasPontas(cena, tracado, 'barreiraConcreto'),
     rio?.carregarModelos(),
     plateia.carregar(),
@@ -110,6 +113,7 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       trofeu?.atualizar(dt, carro);
       pecas.atualizar(dt, carro);
       rio?.atualizar(dt);
+      bloqueios.atualizar(dt);
       rio?.ajustarEscala(camera, alturaEmPixels);
       plateia.atualizar(dt, camera.position);
     },
@@ -153,4 +157,38 @@ function vagasDoEstacionamento(tracado: Tracado, e: DadosEstacionamento): Cenari
     posicao: tracado.pontoAoLado(e.distancia, 'esquerda', lado * e.espacamento).add(new Vector3(0, ALTURA_NASCER, 0)),
     angulo,
   }));
+}
+
+/** Distância (m) entre o bloqueio no fim da estrada e a parede invisível da borda do mundo. */
+const BLOQUEIO_ANTES_DA_BORDA = 40;
+
+/**
+ * Quanto a estrada continua reta em cada ponta: até perto da borda do mundo,
+ * onde fica o bloqueio "pista interditada". Assim ela some no horizonte em
+ * vez de acabar do nada no meio do mato.
+ */
+function prolongamentos(pontos: PontoTracado[]): Prolongamento {
+  // O mesmo retângulo do terreno (pista + margem), recolhido até antes das paredes.
+  const folga = MARGEM_TERRENO - RECUO_LIMITES - BLOQUEIO_ANTES_DA_BORDA;
+  const xs = pontos.map((p) => p[0]);
+  const zs = pontos.map((p) => p[2]);
+  const caixa = { minX: Math.min(...xs) - folga, maxX: Math.max(...xs) + folga, minZ: Math.min(...zs) - folga, maxZ: Math.max(...zs) + folga };
+  const n = pontos.length;
+  return {
+    antes: ateABorda(pontos[0], pontos[1], caixa),
+    depois: ateABorda(pontos[n - 1], pontos[n - 2], caixa),
+  };
+}
+
+/** Quantos metros andando reto de `vizinho` para `ponta` (e além) até sair da caixa. */
+function ateABorda(ponta: PontoTracado, vizinho: PontoTracado, c: { minX: number; maxX: number; minZ: number; maxZ: number }): number {
+  const dx = ponta[0] - vizinho[0];
+  const dz = ponta[2] - vizinho[2];
+  const tamanho = Math.hypot(dx, dz);
+  const ux = dx / tamanho;
+  const uz = dz / tamanho;
+  // Distância até cada parede da caixa na direção em que a estrada segue; vale a mais perto.
+  const ateX = ux > 0 ? (c.maxX - ponta[0]) / ux : ux < 0 ? (c.minX - ponta[0]) / ux : Infinity;
+  const ateZ = uz > 0 ? (c.maxZ - ponta[2]) / uz : uz < 0 ? (c.minZ - ponta[2]) / uz : Infinity;
+  return Math.max(0, Math.min(ateX, ateZ));
 }

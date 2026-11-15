@@ -59,7 +59,7 @@ const DESCIDA_FUNDO_MAR = 40;
 /** Espaço entre os pontos da grade (m). Menor: relevo mais detalhado e mais pesado. */
 const ESPACAMENTO = 8;
 /** Quanto terreno existe além da pista em cada direção (m). */
-const MARGEM = 340;
+export const MARGEM_TERRENO = 340;
 /** O chão perto da pista fica este tanto abaixo do asfalto (m). */
 const ABAIXO_DO_ASFALTO = 0.35;
 /** Faixa plana (m) depois da beira do acostamento, antes de começar a subir. */
@@ -106,16 +106,18 @@ export class Terreno {
     this.rio = arredores.rio;
     this.mar = arredores.mar;
     this.patios = arredores.patios ?? [];
-    // Retângulo que envolve a pista inteira, mais a margem.
+    // Retângulo que envolve a pista inteira, mais a margem. Só a pista "de
+    // verdade": o prolongamento das pontas vai até perto da borda e não conta
+    // (senão a borda fugiria junto, e a estrada nunca chegaria nela).
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-    for (const p of tracado.pontos) {
+    for (const p of tracado.pontos.slice(tracado.indicePrimeiro, tracado.indiceUltimo + 1)) {
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
       minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
     }
-    this.x0 = minX - MARGEM;
-    this.z0 = minZ - MARGEM;
-    this.colunas = Math.ceil((maxX - minX + 2 * MARGEM) / ESPACAMENTO) + 1;
-    this.linhas = Math.ceil((maxZ - minZ + 2 * MARGEM) / ESPACAMENTO) + 1;
+    this.x0 = minX - MARGEM_TERRENO;
+    this.z0 = minZ - MARGEM_TERRENO;
+    this.colunas = Math.ceil((maxX - minX + 2 * MARGEM_TERRENO) / ESPACAMENTO) + 1;
+    this.linhas = Math.ceil((maxZ - minZ + 2 * MARGEM_TERRENO) / ESPACAMENTO) + 1;
 
     this.alturas = new Float32Array(this.colunas * this.linhas);
     this.foraDaPista = new Float32Array(this.colunas * this.linhas);
