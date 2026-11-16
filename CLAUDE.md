@@ -45,7 +45,7 @@ Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais do
 - Colisores físicos simples (caixas/cilindros) para os objetos sólidos; vegetação pequena sem colisor.
 
 ## Desempenho
-- Seletor de qualidade (Baixo / Médio / Alto) em `src/config/quality.ts`, controlando sombras, bloom, SMAA, pixel ratio e distância de desenho. Padrão: Médio.
+- Seletor de qualidade (Celular / Baixo / Médio / Alto) em `src/config/quality.ts`, controlando sombras, bloom, SMAA, pixel ratio e distância de desenho. Padrão: Médio no PC, Celular em aparelho de toque.
 - Limitar `devicePixelRatio` a no máximo 2.
 - Sombra direcional acompanhando o carro, cobrindo só a área próxima.
 - Meta: 60 fps em notebook com vídeo integrado na qualidade Baixa.
@@ -60,7 +60,7 @@ Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais do
 - `R` reposicionar o carro na pista, `T` (re)começar a corrida da largada, `C` trocar câmera, `Esc` pausar.
 - `E` desce do carro no passeio (com o carro parado) e, a pé, entra no carro mais perto (os seus ou os do trânsito/bairros). A pé: `W`/`S` anda, `A`/`D` vira, `Shift` corre, `Espaço` pula, `R` volta para o lado do carro.
 - `Enter` no marcador de missão começa a corrida; na pausa, `Q` abandona a corrida; na chegada, `Enter` volta a passear e `N` segue para a próxima fase.
-- **Celular/tablet** (`Dispositivo.ts` detecta pelo `pointer: coarse`): volante flutuante à esquerda e pedais/botões à direita (`ControlesToque.ts` + `toque.css`), que escrevem no `Toque.ts`, a terceira fonte da `Entrada` ao lado do teclado e do controle. Qualquer elemento com `data-acao-jogo="<ação>"` vira botão (pausa, chegada, convite do marcador). No celular a qualidade padrão é Baixo.
+- **Celular/tablet** (`Dispositivo.ts` detecta pelo `pointer: coarse`): volante flutuante à esquerda e pedais/botões à direita (`ControlesToque.ts` + `toque.css`), que escrevem no `Toque.ts`, a terceira fonte da `Entrada` ao lado do teclado e do controle. Qualquer elemento com `data-acao-jogo="<ação>"` vira botão (pausa, chegada, convite do marcador). No celular a qualidade padrão é Celular.
 
 ## Arquitetura Modular
 - `/src/config/`: `tuning.ts` e `quality.ts`.

@@ -1,6 +1,6 @@
 import './menu.css';
 import creditosMd from '../../CREDITOS.md?raw';
-import { QUALIDADES, type NivelQualidade } from '../config/quality';
+import { NIVEIS_QUALIDADE as NIVEIS, QUALIDADES } from '../config/quality';
 import { Entrada } from '../core/Entrada';
 import { dica } from '../core/Dispositivo';
 import { lerEscolhas, salvarEscolhas, type Escolhas } from '../core/Escolhas';
@@ -27,7 +27,6 @@ import { ORDEM_FASES, faseEstaLiberada } from '../core/Progresso';
 // pequeno, é mais simples que atualizar pedacinho por pedacinho.
 // =============================================================================
 
-const NIVEIS: readonly NivelQualidade[] = ['baixo', 'medio', 'alto'];
 const OPCOES = ['jogar', 'cidade', 'qualidade', 'creditos'] as const;
 type Opcao = (typeof OPCOES)[number];
 
@@ -202,7 +201,7 @@ export class MenuPrincipal {
         ${linha('jogar', '<span class="menu-jogar">JOGAR</span>')}
         ${htmlViagem()}
         ${seletor('cidade', 'Cidade', FASES[this.fase].nome, FASES[this.fase].local)}
-        ${seletor('qualidade', 'Qualidade', QUALIDADES[this.escolhas.qualidade].nome, 'Baixo: notebook com vídeo integrado')}
+        ${seletor('qualidade', 'Qualidade', QUALIDADES[this.escolhas.qualidade].nome, QUALIDADES[this.escolhas.qualidade].descricao)}
         ${linha('creditos', 'Créditos')}
         <div class="menu-dica so-teclado"><kbd>↑</kbd><kbd>↓</kbd> escolher · <kbd>←</kbd><kbd>→</kbd> mudar · <kbd>Enter</kbd> confirmar · 🎮 também funciona</div>
       </div>`;

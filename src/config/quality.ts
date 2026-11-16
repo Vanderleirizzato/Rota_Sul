@@ -1,17 +1,22 @@
 // =============================================================================
 // QUALIDADE GRÁFICA
 // =============================================================================
-// Três níveis prontos. O jogo começa no Médio. A meta do Baixo é 60 fps em
-// notebook com vídeo integrado; o Alto é para placa de vídeo dedicada.
+// Quatro níveis prontos. No PC o jogo começa no Médio; no celular, no
+// Celular. A meta do Baixo é 60 fps em notebook com vídeo integrado; o Alto
+// é para placa de vídeo dedicada.
 //
 // O que mais pesa, em ordem: resolução (pixel ratio), vegetação (árvores
 // detalhadas e a sombra delas), sombras, bloom e SMAA.
 // =============================================================================
 
-export type NivelQualidade = 'baixo' | 'medio' | 'alto';
+/** Do mais leve ao mais pesado: é a ordem em que o menu passa por eles. */
+export const NIVEIS_QUALIDADE = ['celular', 'baixo', 'medio', 'alto'] as const;
+export type NivelQualidade = (typeof NIVEIS_QUALIDADE)[number];
 
 export interface ConfigQualidade {
   nome: string;
+  /** Para quem é este nível (aparece no menu, embaixo do nome). */
+  descricao: string;
   /** Multiplicador máximo de resolução. 1 = um pixel de jogo por pixel de tela
    *  "lógico"; 2 = nitidez de tela retina, com 4 vezes mais trabalho. */
   pixelRatioMaximo: number;
@@ -45,8 +50,28 @@ export interface ConfigQualidade {
 }
 
 export const QUALIDADES: Record<NivelQualidade, ConfigQualidade> = {
+  // Celular: a placa de vídeo é bem mais fraca que a de um notebook, e ela
+  // esquenta (e o celular diminui a velocidade sozinho para esfriar). Por
+  // isso cortamos o que mais pesa: sombras (desenhar a cena duas vezes) e
+  // a quantidade de pixels. A tela é pequena, então a perda quase não aparece.
+  celular: {
+    nome: 'Celular',
+    descricao: 'Celular e tablet: sem sombras, enxerga mais perto',
+    pixelRatioMaximo: 1,
+    escalaResolucao: 0.7,
+    sombras: false,
+    // Sem sombras, estes dois não são usados; ficam pequenos caso alguém ligue as sombras.
+    tamanhoSombra: 512,
+    areaSombra: 30,
+    bloom: false,
+    smaa: false,
+    distanciaDesenho: 220,
+    arvoresDetalhadas: false,
+    sombraCenario: false,
+  },
   baixo: {
     nome: 'Baixo',
+    descricao: 'Notebook com vídeo integrado',
     pixelRatioMaximo: 1,
     escalaResolucao: 0.75,
     sombras: true,
@@ -60,6 +85,7 @@ export const QUALIDADES: Record<NivelQualidade, ConfigQualidade> = {
   },
   medio: {
     nome: 'Médio',
+    descricao: 'Computador comum',
     pixelRatioMaximo: 1.5,
     escalaResolucao: 1,
     sombras: true,
@@ -73,6 +99,7 @@ export const QUALIDADES: Record<NivelQualidade, ConfigQualidade> = {
   },
   alto: {
     nome: 'Alto',
+    descricao: 'Placa de vídeo dedicada',
     // Limite do CLAUDE.md: nunca acima de 2.
     pixelRatioMaximo: 2,
     escalaResolucao: 1,
