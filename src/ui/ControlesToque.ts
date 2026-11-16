@@ -70,8 +70,7 @@ export class ControlesToque {
     this.raiz.className = 'toque';
     this.raiz.innerHTML = `
       <div class="toque-zona-volante"></div>
-      <div class="toque-volante-base"><div class="toque-volante-bola"></div></div>
-      <div class="toque-girar">📱↻<br />Gire o celular para jogar deitado</div>`;
+      <div class="toque-volante-base"><div class="toque-volante-bola"></div></div>`;
     this.baseVolante = this.raiz.querySelector('.toque-volante-base') as HTMLDivElement;
     this.bolaVolante = this.raiz.querySelector('.toque-volante-bola') as HTMLDivElement;
     for (const b of BOTOES) this.criarBotao(b);
@@ -81,10 +80,17 @@ export class ControlesToque {
     this.ligarVolante(this.raiz.querySelector('.toque-zona-volante') as HTMLDivElement);
     // Segurar o dedo na tela abriria o menu de "copiar/salvar imagem" do celular.
     document.addEventListener('contextmenu', (e) => e.preventDefault());
-    // Tela cheia e deitado: só dá para pedir depois de um toque do jogador
-    // (regra dos navegadores). `pointerup` porque, no celular, é o fim do
-    // toque que conta como "gesto" para o navegador, não o começo.
-    window.addEventListener('pointerup', () => void pedirTelaCheiaDeitada(), { once: true });
+    // Tela cheia (some a barra do navegador): só dá para pedir depois de um
+    // toque do jogador (regra dos navegadores). `pointerup` porque, no
+    // celular, é o fim do toque que conta como "gesto", não o começo. Tenta
+    // a cada toque até conseguir; depois disso, para de insistir (se o
+    // jogador sair da tela cheia de propósito, o jogo respeita).
+    const tentarTelaCheia = (): void => {
+      void pedirTelaCheia().then((conseguiu) => {
+        if (conseguiu) window.removeEventListener('pointerup', tentarTelaCheia);
+      });
+    };
+    window.addEventListener('pointerup', tentarTelaCheia);
     this.mostrarAPe(false);
   }
 
@@ -184,17 +190,19 @@ function limitar(v: number): number {
 }
 
 /**
- * Tela cheia (some a barra de endereço) e trava o celular deitado. Nem todo
- * navegador deixa (o Safari do iPhone não faz nenhum dos dois): por isso
- * tudo pode falhar em silêncio, e o jogo segue normal.
+ * Pede tela cheia (some a barra de endereço). Não travamos a orientação:
+ * dá para jogar em pé ou deitado. O Safari do iPhone não tem tela cheia para
+ * páginas; lá, o jeito é "Compartilhar → Adicionar à Tela de Início", que
+ * abre o jogo como um aplicativo, sem a barra (ver as <meta> do index.html).
+ * @returns true se a tela cheia está ligada (ou o navegador não tem como ligar).
  */
-async function pedirTelaCheiaDeitada(): Promise<void> {
+async function pedirTelaCheia(): Promise<boolean> {
+  if (document.fullscreenElement) return true;
+  if (!document.documentElement.requestFullscreen) return true; // iPhone: não adianta insistir
   try {
-    if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
-    // `lock` existe no Chrome do Android, mas falta nos tipos do TypeScript.
-    const orientacao = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-    await orientacao.lock?.('landscape');
+    await document.documentElement.requestFullscreen();
+    return true;
   } catch {
-    // sem tela cheia: joga com a barra do navegador aparecendo
+    return false; // tenta de novo no próximo toque
   }
 }

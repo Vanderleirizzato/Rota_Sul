@@ -143,21 +143,11 @@
 .toque-dev { left: calc(var(--margem-esq) + 168px); display: none; }
 .toque.com-dev .toque-dev { display: grid; }
 
-/* ---- Celular em pé: pede para deitar ---- */
-
-.toque-girar {
-  position: fixed;
-  inset: 0;
-  display: none;
-  place-content: center;
-  text-align: center;
-  padding: 24px;
-  background: #05080e;
-  font: 600 20px/1.6 system-ui, sans-serif;
-  pointer-events: auto;
-}
+/* ---- Celular em pé ----
+   Dá para jogar em pé ou deitado. Em pé, o volante ocupa mais da largura
+   (a tela é estreita) e a zona dele vai até mais perto do meio. */
 @media (orientation: portrait) {
-  .toque-girar { display: grid; }
+  .toque-zona-volante { width: 50%; height: 60%; }
 }
 
 /* Telas baixinhas (celular pequeno deitado): tudo um pouco menor. */
