@@ -12,11 +12,12 @@ import {
 } from 'three';
 import type { MundoFisico } from '../physics/MundoFisico';
 import { texturaAsfalto, texturaDetalheChao } from '../graphics/Texturas';
-import { MODELOS, type IdModelo, type InfoModelo } from './assets';
+import { MODELOS, type IdModelo } from './assets';
 import { obterModelo } from './CarregadorModelos';
 import { criarLampadas } from './Fileiras';
 import { criarArvoreLeve, criarInstancias, type LugarInstancia } from './Instancias';
-import type { CarroDisponivel } from './Cenario';
+import { CarrosEstacionados, type Estacionado } from './CarrosEstacionados';
+import type { Postes } from './Postes';
 import type RAPIER from '@dimforge/rapier3d-compat';
 import type { DadosBairro, DadosPatio } from './levels/TiposFase';
 import { criarSorteio } from './Ruido';
@@ -72,60 +73,8 @@ const COR_COPA = 0x3f7a32;
 const COR_TRONCO = 0x6b4a2b;
 /** Nenhum carro sorteado estaciona a menos disto (m) de uma vaga reservada (os carros do jogador). */
 const LONGE_DAS_RESERVADAS = 7;
-const SUMIR = new Matrix4().makeScale(0, 0, 0);
-
-/** Um carro estacionado num bairro: dá para pegar e dirigir (se o modelo tiver rodas). */
-interface Estacionado {
-  modelo: IdModelo;
-  posicao: Vector3;
-  angulo: number;
-  colisor: RAPIER.Collider;
-  /** Qual cópia (na lista de matrizes do modelo) é ele: para escondê-lo quando for pego. */
-  copia: number;
-  lugares: LugarInstancia[];
-  pego: boolean;
-}
-
-/**
- * Os carros estacionados de todos os bairros. Eles são cópias de um
- * InstancedMesh (baratos de desenhar), com um colisor fixo. Quando o jogador
- * pega um, a cópia some, o colisor sai, e o Jogo põe um carro de verdade
- * (com rodas e suspensão) exatamente no lugar.
- */
-export class CarrosDoBairro {
-  constructor(
-    private readonly fisica: MundoFisico,
-    private readonly lista: Estacionado[],
-  ) {}
-
-  disponivel(p: Vector3, raio: number): CarroDisponivel | null {
-    let melhor: Estacionado | null = null;
-    let menor = raio;
-    for (const e of this.lista) {
-      const info: InfoModelo = MODELOS[e.modelo];
-      if (e.pego || !info.rodas) continue;
-      // Do meio do carro até a lataria: uns 2 m.
-      const d = Math.max(0, e.posicao.distanceTo(p) - 2);
-      if (d <= menor) {
-        menor = d;
-        melhor = e;
-      }
-    }
-    if (!melhor) return null;
-    const e = melhor;
-    return { modelo: e.modelo, posicao: e.posicao.clone(), angulo: e.angulo, distancia: menor, pegar: () => this.pegar(e) };
-  }
-
-  private pegar(e: Estacionado): void {
-    if (e.pego) return;
-    e.pego = true;
-    this.fisica.removerColisor(e.colisor);
-    for (const { malha, indice } of e.lugares) {
-      malha.setMatrixAt(indice, SUMIR);
-      malha.instanceMatrix.needsUpdate = true;
-    }
-  }
-}
+/** Raio (m) do tronco dos postes das esquinas (o colisor). */
+const RAIO_POSTE = 0.12;
 
 /** Distância entre duas ruas iguais (uma quadra + uma rua). */
 function passo(b: DadosBairro): number {
@@ -255,17 +204,23 @@ export async function colocarBairros(
   terreno: Terreno,
   bairros: readonly DadosBairro[],
   /** Vagas que ficam livres (onde estão os carros do jogador). */
-  reservadas: readonly Vector3[] = [],
-): Promise<CarrosDoBairro> {
+  reservadas: readonly Vector3[],
+  /** Os postes derrubáveis da fase: os das esquinas entram junto com os da avenida. */
+  postes: Postes,
+): Promise<CarrosEstacionados> {
   const estacionados: Estacionado[] = [];
-  if (bairros.length === 0) return new CarrosDoBairro(fisica, estacionados);
+  if (bairros.length === 0) return new CarrosEstacionados(cena, fisica, estacionados, new Map());
   const ids = [...new Set<IdModelo>([...bairros.flatMap((b) => [...b.construcoes.flat(), ...b.modelosCarros]), 'posteLampiao'])];
   const modelos = new Map(await Promise.all(ids.map(async (id) => [id, await obterModelo(id)] as const)));
   const medidas = new Map(ids.map((id) => [id, new Box3().setFromObject(modelos.get(id)!).getSize(new Vector3())]));
 
   const matrizes = new Map<IdModelo, Matrix4[]>(ids.map((id) => [id, []]));
+  /** Para cada carro estacionado (pela posição na lista), qual cópia do modelo ele é. */
+  const copias = new Map<number, number>();
   const arvores: Matrix4[] = [];
   const lampadas: Vector3[] = [];
+  /** Postes das esquinas: viram derrubáveis depois de instanciados (ver Postes.ts). */
+  const postesEsquina: { copia: number; base: Vector3; altura: number; colisor: RAPIER.Collider; lampada: number | null }[] = [];
   const materialRua = new MeshStandardMaterial({ map: texturaAsfalto(), roughness: 0.9, metalness: 0 });
   const materialLote = new MeshStandardMaterial({ color: COR_LOTE, map: texturaDetalheChao(), roughness: 1, metalness: 0 });
 
@@ -326,11 +281,17 @@ export async function colocarBairros(
         // Postes nas quatro esquinas, na calçada.
         for (const [s, a] of [[s0 + 1, a0 + 1], [s1 - 1, a0 + 1], [s0 + 1, a1 - 1], [s1 - 1, a1 - 1]]) {
           const base = grade.ponto(s, a);
-          matrizes.get('posteLampiao')!.push(new Matrix4().makeTranslation(base.x, base.y, base.z));
+          const lista = matrizes.get('posteLampiao')!;
+          lista.push(new Matrix4().makeTranslation(base.x, base.y, base.z));
           const altura = medidas.get('posteLampiao')!.y;
-          fisica.criarCilindroFixo({ x: base.x, y: base.y + altura / 2, z: base.z }, 0.12, altura / 2);
+          const colisor = fisica.criarCilindroFixo({ x: base.x, y: base.y + altura / 2, z: base.z }, RAIO_POSTE, altura / 2);
           const lampada = MODELOS.posteLampiao.lampada;
-          if (b.postesAcesos && lampada) lampadas.push(new Vector3(...lampada).add(base));
+          let indiceLampada: number | null = null;
+          if (b.postesAcesos && lampada) {
+            indiceLampada = lampadas.length;
+            lampadas.push(new Vector3(...lampada).add(base));
+          }
+          postesEsquina.push({ copia: lista.length - 1, base, altura, colisor, lampada: indiceLampada });
         }
       }
     }
@@ -344,7 +305,10 @@ export async function colocarBairros(
       const posicao = grade.ponto(s, a);
       if (reservadas.some((r) => Math.hypot(r.x - posicao.x, r.z - posicao.z) < LONGE_DAS_RESERVADAS)) return;
       const colisor = colocar(id, s, a, frente);
-      estacionados.push({ modelo: id, posicao, angulo: Math.atan2(frente.x, frente.z), colisor, copia: matrizes.get(id)!.length - 1, lugares: [], pego: false });
+      const lista = matrizes.get(id)!;
+      const meias = medidas.get(id)!.clone().multiplyScalar(0.5);
+      copias.set(estacionados.length, lista.length - 1);
+      estacionados.push({ modelo: id, posicao, giro: giroPara(frente), meias, matriz: lista[lista.length - 1], colisor, lugares: [], solto: null, pego: false });
     };
     for (let i = 0; i <= k; i++) {
       // Nas transversais: dos dois lados, ao longo de cada quadra.
@@ -404,12 +368,31 @@ export async function colocarBairros(
     }
   });
 
+  const lugares = new Map<IdModelo, LugarInstancia[][]>();
   for (const [id, lista] of matrizes) {
     const onde: LugarInstancia[][] = [];
     criarInstancias(cena, modelos.get(id)!, lista, true, onde);
-    for (const e of estacionados) if (e.modelo === id) e.lugares = onde[e.copia];
+    lugares.set(id, onde);
   }
+  estacionados.forEach((e, n) => (e.lugares = lugares.get(e.modelo)![copias.get(n)!]));
   criarInstancias(cena, criarArvoreLeve(COR_COPA, COR_TRONCO), arvores);
-  if (lampadas.length > 0) cena.add(criarLampadas(lampadas));
-  return new CarrosDoBairro(fisica, estacionados);
+  const malhaLampadas = lampadas.length > 0 ? criarLampadas(lampadas) : null;
+  if (malhaLampadas) cena.add(malhaLampadas);
+
+  // Postes das esquinas: derrubáveis, iguais aos da avenida.
+  const matrizesPoste = matrizes.get('posteLampiao')!;
+  for (const p of postesEsquina) {
+    postes.adicionar({
+      modelo: modelos.get('posteLampiao')!,
+      matriz: matrizesPoste[p.copia],
+      base: p.base,
+      altura: p.altura,
+      raio: RAIO_POSTE,
+      colisor: p.colisor,
+      pedacos: lugares.get('posteLampiao')![p.copia],
+      lampada: malhaLampadas && p.lampada !== null ? { malha: malhaLampadas, indice: p.lampada } : null,
+      posicaoLampada: p.lampada !== null ? lampadas[p.lampada] : new Vector3(),
+    });
+  }
+  return new CarrosEstacionados(cena, fisica, estacionados, modelos);
 }

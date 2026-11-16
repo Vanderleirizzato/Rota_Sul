@@ -241,7 +241,8 @@ export const IDS_CARROS: readonly IdCarro[] = ['carro1', 'carro2', 'carro3'];
 // diferente para as mesmas animações, então guardamos o nome de cada uma.
 // Precisa ter parado, andando e correndo. O pulo é opcional: quem não tem
 // (os modelos de 24 animações da Quaternius) usa a corrida no ar.
-// Os nomes próprios são só sugestão: troque à vontade.
+// Os nomes são paródias de brincadeira (gente famosa e novelas do Brasil,
+// misturadas com coisas de carro). Só sugestão: troque à vontade.
 
 /** O nome de cada animação no arquivo (a parte depois do "|": "HumanArmature|Man_Walk" → "Man_Walk"). */
 export interface AnimacoesAPe {
@@ -260,10 +261,10 @@ export const IDS_PERSONAGENS: readonly IdPersonagem[] = ['homem', 'mulher', 'mol
 const ANIMACOES_QUATERNIUS_24: AnimacoesAPe = { parado: 'Idle', andando: 'Walk', correndo: 'Run' };
 
 export const PERSONAGENS: Record<IdPersonagem, { nome: string; animacoes: AnimacoesAPe }> = {
-  homem: { nome: 'Rafael', animacoes: { parado: 'Man_Idle', andando: 'Man_Walk', correndo: 'Man_Run', pulando: 'Man_Jump' } },
-  mulher: { nome: 'Júlia', animacoes: { parado: 'Idle', andando: 'Walking', correndo: 'Running', pulando: 'Jump' } },
-  moletom: { nome: 'Davi', animacoes: ANIMACOES_QUATERNIUS_24 },
-  mulher2: { nome: 'Camila', animacoes: ANIMACOES_QUATERNIUS_24 },
-  aventureiro: { nome: 'Tiago', animacoes: ANIMACOES_QUATERNIUS_24 },
-  aventureira: { nome: 'Lara', animacoes: ANIMACOES_QUATERNIUS_24 },
+  homem: { nome: 'Zeca Pneuzinho', animacoes: { parado: 'Man_Idle', andando: 'Man_Walk', correndo: 'Man_Run', pulando: 'Man_Jump' } },
+  mulher: { nome: 'Ivete Sem-Gasolina', animacoes: { parado: 'Idle', andando: 'Walking', correndo: 'Running', pulando: 'Jump' } },
+  moletom: { nome: 'Neymarcha Ré', animacoes: ANIMACOES_QUATERNIUS_24 },
+  mulher2: { nome: 'Gretchen Freio de Mão', animacoes: ANIMACOES_QUATERNIUS_24 },
+  aventureiro: { nome: 'Ayrton Semáforo', animacoes: ANIMACOES_QUATERNIUS_24 },
+  aventureira: { nome: 'Tieta do Asfalto', animacoes: ANIMACOES_QUATERNIUS_24 },
 };

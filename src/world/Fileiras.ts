@@ -15,7 +15,7 @@ import type { MundoFisico } from '../physics/MundoFisico';
 import { MODELOS, type IdModelo, type InfoModelo } from './assets';
 import { obterModelo } from './CarregadorModelos';
 import { criarInstancias, type LugarInstancia } from './Instancias';
-import { Postes } from './Postes';
+import type { Postes } from './Postes';
 import type { FileiraFase } from './levels/TiposFase';
 import { criarSorteio } from './Ruido';
 import type { Terreno } from './Terreno';
@@ -40,8 +40,8 @@ const COR_LAMPADA = 0xffd9a0;
 type Medidas = Map<IdModelo, Vector3>;
 
 /**
- * Monta todas as fileiras da fase. Devolve os postes que podem ser
- * derrubados (fileiras com `derrubavel: true`), que precisam de atualização.
+ * Monta todas as fileiras da fase. Os postes que podem ser derrubados
+ * (fileiras com `derrubavel: true`) entram em `postes`.
  */
 export async function colocarFileiras(
   cena: Scene,
@@ -49,9 +49,10 @@ export async function colocarFileiras(
   tracado: Tracado,
   terreno: Terreno,
   fileiras: readonly FileiraFase[],
-): Promise<Postes> {
-  const postes = new Postes(cena, fisica);
-  if (fileiras.length === 0) return postes;
+  /** Onde entram os postes derrubáveis (a fase cria um só para fileiras e bairros). */
+  postes: Postes,
+): Promise<void> {
+  if (fileiras.length === 0) return;
   const ids = [...new Set(fileiras.flatMap((f) => f.modelos))];
   const modelos = new Map(await Promise.all(ids.map(async (id) => [id, await obterModelo(id)] as const)));
   const medidas: Medidas = new Map(ids.map((id) => [id, new Box3().setFromObject(modelos.get(id)!).getSize(new Vector3())]));
@@ -92,7 +93,6 @@ export async function colocarFileiras(
       posicaoLampada: d.lampada !== null ? lampadas[d.lampada] : new Vector3(),
     });
   }
-  return postes;
 
   /** Um objeto (ou uma pilha deles) na distância `d` da fileira `f`. */
   function colocarUm(f: FileiraFase, d: number): void {

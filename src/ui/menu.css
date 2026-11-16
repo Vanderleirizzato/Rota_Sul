@@ -77,7 +77,7 @@
 .menu-escolha-item { display: flex; align-items: center; justify-content: center; gap: 36px; }
 .menu-escolha-numero { font-size: 13px; letter-spacing: 4px; opacity: 0.6; }
 .menu-escolha-dica { margin-top: 10px; font-size: 14px; opacity: 0.75; }
-.menu-escolha-nome { font: 900 42px ui-monospace, Consolas, monospace; letter-spacing: 3px; min-width: 9em; }
+.menu-escolha-nome { font: 900 34px ui-monospace, Consolas, monospace; letter-spacing: 3px; min-width: 9em; }
 .menu-seta { font-size: 40px; color: #33e1ff; cursor: pointer; padding: 0 12px; }
 .menu-seta:hover { color: #fff; }
 

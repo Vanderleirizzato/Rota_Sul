@@ -25,6 +25,7 @@ import { Bloqueios } from './Bloqueios';
 import { colocarBairros, patioDoBairro } from './Bairro';
 import { colocarLimites, RECUO_LIMITES } from './LimitesMundo';
 import { Pecas } from './Pecas';
+import { Postes } from './Postes';
 import { tuning } from '../config/tuning';
 
 /** O carro nasce este tanto (m) antes da linha de largada. */
@@ -64,12 +65,14 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
   const pecas = new Pecas(cena, tracado, terreno, dados.id, dados.pecas ?? []);
 
   // Tudo que depende de baixar arquivos .glb roda em paralelo.
-  const [vegetacao, , postes, carrosBairro, bloqueios] = await Promise.all([
+  // Postes derrubáveis: os da avenida (fileiras) e os das esquinas dos bairros.
+  const postes = new Postes(cena, fisica);
+  const [vegetacao, , , carrosBairro, bloqueios] = await Promise.all([
     // Abaixo da água (rio ou mar) nada nasce.
     plantarVegetacao(cena, fisica, tracado, terreno, BIOMAS[dados.bioma], dados.rio?.nivel ?? dados.mar?.nivel),
     colocarObjetos(cena, fisica, tracado, terreno, dados.objetos),
-    colocarFileiras(cena, fisica, tracado, terreno, dados.fileiras ?? []),
-    colocarBairros(cena, fisica, tracado, terreno, bairros, vagas.map((v) => v.posicao)),
+    colocarFileiras(cena, fisica, tracado, terreno, dados.fileiras ?? [], postes),
+    colocarBairros(cena, fisica, tracado, terreno, bairros, vagas.map((v) => v.posicao), postes),
     // Fim da estrada: "pista interditada" nas duas pontas.
     Bloqueios.criar(cena, fisica, tracado),
     barreirasNasPontas(cena, tracado, 'barreiraConcreto'),
@@ -119,6 +122,7 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       trafego?.atualizar(dt, posicaoCarro, alfa);
       soltos.atualizar(camera.position);
       postes.atualizar();
+      carrosBairro.atualizar();
       andarilhos?.atualizar(dt, camera.position, carro);
       insetos?.atualizar(dt, carro);
       trofeu?.atualizar(dt, carro);
@@ -134,11 +138,12 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       carro.velocidade.copy(estado.velocidade);
       trafego?.passo(dt, carro);
       postes.passo(dt, carro);
+      carrosBairro.passo(dt, carro);
     },
     colherImpactos: () => ({
       plastico: soltos.colherImpacto(),
       macio: Math.max(andarilhos?.colherImpacto() ?? 0, insetos?.colherImpacto() ?? 0),
-      metal: postes.colherImpacto(),
+      metal: Math.max(postes.colherImpacto(), carrosBairro.colherImpacto()),
     }),
     pegouTrofeu: () => trofeu?.pegou() ?? false,
     tempoParaLiberar: dados.tempoParaLiberar ?? null,
@@ -149,6 +154,7 @@ export async function construirFase(dados: DadosFase, cena: Scene, fisica: Mundo
       soltos.reiniciar();
       trafego?.reiniciar();
       postes.reiniciar();
+      carrosBairro.reiniciar();
     },
     aplicarQualidade(q) {
       vegetacao.aplicarQualidade(q);
