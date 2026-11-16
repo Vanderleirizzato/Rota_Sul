@@ -1,4 +1,5 @@
 import { QUALIDADE_PADRAO, type NivelQualidade } from '../config/quality';
+import { TELA_DE_TOQUE } from './Dispositivo';
 import { IDS_CARROS, IDS_PERSONAGENS, type IdCarro, type IdPersonagem } from '../world/assets';
 
 // =============================================================================
@@ -19,7 +20,8 @@ export interface Escolhas {
 }
 
 const CHAVE = 'rotaSul.escolhas';
-const PADRAO: Escolhas = { personagem: 'homem', carro: 'carro1', qualidade: QUALIDADE_PADRAO };
+/** No celular começa no Baixo: a placa de vídeo dele é a de um notebook bem simples. */
+const PADRAO: Escolhas = { personagem: 'homem', carro: 'carro1', qualidade: TELA_DE_TOQUE ? 'baixo' : QUALIDADE_PADRAO };
 const QUALIDADES: readonly NivelQualidade[] = ['baixo', 'medio', 'alto'];
 
 export function lerEscolhas(): Escolhas {

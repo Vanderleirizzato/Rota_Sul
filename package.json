@@ -4,6 +4,7 @@
   "description": "Rota Sul: corrida arcade 3D de Foz do Iguaçu a Navegantes",
   "scripts": {
     "dev": "vite",
+    "dev:celular": "vite --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "inspecionar-modelos": "node scripts/inspecionar-modelos.mjs"

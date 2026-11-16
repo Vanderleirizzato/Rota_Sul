@@ -3,7 +3,7 @@ import { formatarTempo } from '../core/Corrida';
 
 // Tela de Fim de Fase: o tempo da corrida, o recorde, se a próxima fase foi
 // liberada e o que fazer depois (continuar passeando, correr de novo, seguir
-// viagem ou ir ao menu).
+// viagem ou ir ao menu), com botões que funcionam com mouse, dedo e teclado.
 
 /** A situação da próxima fase da viagem, vista da chegada. */
 export interface SituacaoViagem {
@@ -40,8 +40,8 @@ export class TelaFimFase {
         <div class="tela-fim-tempo">${formatarTempo(tempo)}</div>
         ${linhaRecorde}
         ${linhaViagem(viagem)}
-        <div class="tela-fim-dica"><kbd>Enter</kbd> continuar passeando &nbsp;·&nbsp; 🎮 <kbd>A</kbd></div>
-        <div class="tela-fim-dica"><kbd>T</kbd> correr de novo · <kbd>M</kbd> menu</div>
+        ${botoes(viagem)}
+        <div class="tela-fim-dica so-teclado">🎮 <kbd>A</kbd> continuar · <kbd>Y</kbd> seguir viagem · <kbd>Back</kbd> correr de novo</div>
       </div>`;
     this.elemento.classList.add('visivel');
   }
@@ -51,11 +51,27 @@ export class TelaFimFase {
   }
 }
 
+/**
+ * O que fazer agora. Cada botão tem `data-acao-jogo`: clicar (ou tocar)
+ * vale como apertar a tecla (ver core/Toque.ts). A tecla aparece no botão.
+ */
+function botoes(v: SituacaoViagem | null): string {
+  const seguir = v?.liberada
+    ? `<button class="principal" data-acao-jogo="proximaFase">Seguir para ${v.proxima} <kbd>N</kbd></button>`
+    : '';
+  return `
+    <div class="tela-botoes">
+      ${seguir}
+      <button class="${seguir ? '' : 'principal'}" data-acao-jogo="confirmar">Continuar passeando <kbd>Enter</kbd></button>
+      <button data-acao-jogo="reiniciar">Correr de novo <kbd>T</kbd></button>
+      <button data-acao-jogo="menu">Menu <kbd>M</kbd></button>
+    </div>`;
+}
+
 function linhaViagem(v: SituacaoViagem | null): string {
   if (!v) return '<div class="tela-fim-viagem">Fim da viagem! 🎉</div>';
-  const seguir = `<kbd>N</kbd> seguir viagem para <b>${v.proxima}</b> &nbsp;·&nbsp; 🎮 <kbd>Y</kbd>`;
-  if (v.acabouDeLiberar) return `<div class="tela-fim-viagem novo">🔓 ${v.proxima} liberado!</div><div class="tela-fim-dica">${seguir}</div>`;
-  if (v.liberada) return `<div class="tela-fim-dica">${seguir}</div>`;
+  if (v.acabouDeLiberar) return `<div class="tela-fim-viagem novo">🔓 ${v.proxima} liberado!</div>`;
+  if (v.liberada) return '';
   if (v.meta !== null) {
     return `<div class="tela-fim-viagem">🔒 Faça abaixo de <b>${formatarTempo(v.meta)}</b> para liberar <b>${v.proxima}</b></div>`;
   }

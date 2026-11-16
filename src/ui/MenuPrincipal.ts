@@ -2,6 +2,7 @@ import './menu.css';
 import creditosMd from '../../CREDITOS.md?raw';
 import { QUALIDADES, type NivelQualidade } from '../config/quality';
 import { Entrada } from '../core/Entrada';
+import { dica } from '../core/Dispositivo';
 import { lerEscolhas, salvarEscolhas, type Escolhas } from '../core/Escolhas';
 import { irParaFase, type EstadoMenu } from '../core/Estados';
 import { formatarTempo } from '../core/Corrida';
@@ -203,7 +204,7 @@ export class MenuPrincipal {
         ${seletor('cidade', 'Cidade', FASES[this.fase].nome, FASES[this.fase].local)}
         ${seletor('qualidade', 'Qualidade', QUALIDADES[this.escolhas.qualidade].nome, 'Baixo: notebook com vídeo integrado')}
         ${linha('creditos', 'Créditos')}
-        <div class="menu-dica"><kbd>↑</kbd><kbd>↓</kbd> escolher · <kbd>←</kbd><kbd>→</kbd> mudar · <kbd>Enter</kbd> confirmar · 🎮 também funciona</div>
+        <div class="menu-dica so-teclado"><kbd>↑</kbd><kbd>↓</kbd> escolher · <kbd>←</kbd><kbd>→</kbd> mudar · <kbd>Enter</kbd> confirmar · 🎮 também funciona</div>
       </div>`;
   }
 
@@ -219,7 +220,7 @@ export class MenuPrincipal {
           <div><div class="menu-escolha-numero">PERSONAGEM ${numero} DE ${lista.length}</div><div class="menu-escolha-nome">${nome}</div></div>
           <b class="menu-seta" data-acao="personagem-proximo">▶</b>
         </div>
-        <div class="menu-escolha-dica">Os seus 3 carros estão estacionados no jogo: ande até um e aperte <kbd>E</kbd>.</div>
+        <div class="menu-escolha-dica">Os seus 3 carros estão estacionados no jogo: ande até um e aperte ${dica('<kbd>E</kbd>', 'o botão 🚗')}.</div>
         <div class="menu-botoes">
           <button data-acao="voltar">Voltar <kbd>Esc</kbd></button>
           <button class="principal" data-acao="correr">Correr! <kbd>Enter</kbd></button>

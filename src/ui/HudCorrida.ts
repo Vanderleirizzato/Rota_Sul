@@ -70,6 +70,9 @@ export class HudCorrida {
     this.pecas = this.bussola.querySelector('.hud-bussola-pecas') as HTMLElement;
 
     this.convite = criar('hud-convite');
+    // Tocar (ou clicar) no convite vale como Enter: no celular, é o botão de
+    // começar a corrida (ver Toque.ts, atributo data-acao-jogo).
+    this.convite.dataset.acaoJogo = 'confirmar';
     this.aviso = criar('hud-aviso');
     document.body.append(this.cronometro, this.contagem, this.titulo, this.bussola, this.convite, this.aviso);
   }

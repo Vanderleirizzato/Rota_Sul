@@ -28,3 +28,16 @@ canvas { display: block; }
 .carregando-trilho { height: 12px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
 .carregando-barra { height: 100%; width: 0; background: linear-gradient(90deg, #33e1ff, #ffcc33); transition: width 0.2s; }
 .carregando-detalhe { margin-top: 10px; font-size: 0.9rem; opacity: 0.7; }
+
+/* ---- Celular e tablet (o main.ts põe a classe toque-ativo no body) ---- */
+.toque-ativo {
+  /* Segurar o dedo não seleciona texto nem abre o menu de "copiar". */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Arrastar o dedo no jogo não rola nem dá zoom na página. */
+.toque-ativo canvas { touch-action: none; }
+/* Dicas de teclado e de controle não servem para quem joga com o dedo. */
+.toque-ativo .so-teclado { display: none; }

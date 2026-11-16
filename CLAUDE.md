@@ -60,6 +60,7 @@ Todos os modelos estão em `public/models/` no formato `.glb`. Os nomes reais do
 - `R` reposicionar o carro na pista, `T` (re)começar a corrida da largada, `C` trocar câmera, `Esc` pausar.
 - `E` desce do carro no passeio (com o carro parado) e, a pé, entra no carro mais perto (os seus ou os do trânsito/bairros). A pé: `W`/`S` anda, `A`/`D` vira, `Shift` corre, `Espaço` pula, `R` volta para o lado do carro.
 - `Enter` no marcador de missão começa a corrida; na pausa, `Q` abandona a corrida; na chegada, `Enter` volta a passear e `N` segue para a próxima fase.
+- **Celular/tablet** (`Dispositivo.ts` detecta pelo `pointer: coarse`): volante flutuante à esquerda e pedais/botões à direita (`ControlesToque.ts` + `toque.css`), que escrevem no `Toque.ts`, a terceira fonte da `Entrada` ao lado do teclado e do controle. Qualquer elemento com `data-acao-jogo="<ação>"` vira botão (pausa, chegada, convite do marcador). No celular a qualidade padrão é Baixo.
 
 ## Arquitetura Modular
 - `/src/config/`: `tuning.ts` e `quality.ts`.

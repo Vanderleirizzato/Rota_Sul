@@ -1,3 +1,4 @@
+import { dica } from '../core/Dispositivo';
 import './menu.css';
 
 // Faixa grande no meio da tela: "Easter Egg Encontrado: Modo Dev Ativado!".
@@ -20,7 +21,7 @@ export class MensagemEasterEgg {
       <div class="easter-egg-rotulo">🏆 EASTER EGG ENCONTRADO</div>
       <div class="easter-egg-titulo">Modo Dev Ativado!</div>
       <div class="easter-egg-dica">
-        ${primeiraVez ? 'Parabéns, Enzo! ' : ''}Super velocidade ligada. Aperte <kbd>F2</kbd> para abrir o painel de tuning.
+        ${primeiraVez ? 'Parabéns, Enzo! ' : ''}Super velocidade ligada. ${dica('Aperte <kbd>F2</kbd>', 'Toque no 🔧')} para abrir o painel de tuning.
       </div>`;
     this.elemento.classList.add('visivel');
     window.clearTimeout(this.timer);

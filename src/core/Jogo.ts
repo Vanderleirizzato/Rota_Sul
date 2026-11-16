@@ -47,6 +47,8 @@ import { colocarPlaca } from '../graphics/Placa';
 import { aplicarSuperVelocidade, liberarModoDev, modoDevLiberado } from './ModoDev';
 import { MensagemEasterEgg } from '../ui/MensagemEasterEgg';
 import { Personagem } from './Personagem';
+import { TELA_DE_TOQUE, dica } from './Dispositivo';
+import { ControlesToque } from '../ui/ControlesToque';
 import type { ComandosAPe } from '../physics/PersonagemFisico';
 
 /** Um carro dirigível: física e visual andam juntos. */
@@ -82,6 +84,8 @@ export class Jogo {
   private readonly loop = new LoopFixo(PASSO_FISICA);
   /** Teclado e controle de videogame juntos. */
   private readonly entrada = new Entrada();
+  /** Volante e pedais na tela: só existem no celular/tablet. */
+  private readonly controlesToque = TELA_DE_TOQUE ? new ControlesToque(this.entrada.toque, modoDevLiberado()) : null;
   private readonly camera: CameraPerseguicao;
   private readonly iluminacao: Iluminacao;
   private readonly ceu: Ceu;
@@ -177,7 +181,9 @@ export class Jogo {
     // Navegadores só deixam tocar som depois de um gesto do jogador.
     const ligarSom = (): void => this.audio.iniciar();
     window.addEventListener('keydown', ligarSom, { once: true });
-    window.addEventListener('pointerdown', ligarSom, { once: true });
+    // `pointerup`, e não `pointerdown`: no celular, o navegador só aceita
+    // ligar o som no FIM do toque (no PC, os dois servem).
+    window.addEventListener('pointerup', ligarSom, { once: true });
     // Trocou de aba ou minimizou: pausa sozinho.
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.definirPausa(true);
@@ -361,6 +367,7 @@ export class Jogo {
       camera: NOMES_CAMERA[this.camera.modo],
     });
     this.hud.mostrarAPe(aPe);
+    this.controlesToque?.mostrarAPe(aPe);
 
     this.posProcessamento.desenhar();
     this.entrada.fimDoQuadro();
@@ -698,13 +705,15 @@ export class Jogo {
     const v = this.infoViagem;
     // A pé, o marcador mostra o que é, mas viajar e correr é de carro.
     const aPe = this.personagem.ativo;
-    const deCarro = 'Volte para o carro (<kbd>E</kbd>) e pare aqui';
+    const deCarro = `Volte para o carro (${dica('<kbd>E</kbd>', 'botão 🚗')}) e pare aqui`;
+    // No celular, o próprio convite é o botão (ver HudCorrida).
+    const toqueAqui = (verbo: string): string => dica(`<kbd>Enter</kbd> ${verbo} &nbsp;·&nbsp; 🎮 <kbd>A</kbd>`, `👆 Toque aqui para ${verbo}`);
     if (this.marcadorViagem && v.dentro && proxima) {
       return {
         rotulo: '🧭 SEGUIR VIAGEM',
         nome: FASES[proxima].nome,
         detalhe: FASES[proxima].local,
-        acao: aPe ? deCarro : v.rapido ? 'Pare no marcador para viajar' : '<kbd>Enter</kbd> viajar &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
+        acao: aPe ? deCarro : v.rapido ? 'Pare no marcador para viajar' : toqueAqui('viajar'),
       };
     }
     const m = this.infoMarcador;
@@ -718,7 +727,7 @@ export class Jogo {
       rotulo: '🏁 CORRIDA',
       nome: this.cenario.nome,
       detalhe: (this.recorde === null ? 'Sem recorde ainda' : `Recorde: ${formatarTempo(this.recorde)}`) + linhaMeta,
-      acao: aPe ? deCarro : m.rapido ? 'Pare no marcador para correr' : '<kbd>Enter</kbd> correr &nbsp;·&nbsp; 🎮 <kbd>A</kbd>',
+      acao: aPe ? deCarro : m.rapido ? 'Pare no marcador para correr' : toqueAqui('correr'),
     };
   }
 
@@ -766,6 +775,7 @@ export class Jogo {
     const primeiraVez = liberarModoDev();
     this.painel.trocarValores(aplicarSuperVelocidade);
     this.mensagemEasterEgg.mostrar(primeiraVez);
+    this.controlesToque?.liberarPainelDev();
     this.audio.bip(true);
   }
 

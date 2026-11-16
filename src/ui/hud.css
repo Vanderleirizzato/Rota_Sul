@@ -266,3 +266,54 @@
 /* A pé: velocímetro e nitro são do carro, então somem (com um esmaecer rápido). */
 .hud { transition: opacity 0.25s; }
 .hud.a-pe { opacity: 0; }
+
+/* ---- Celular e tablet (o main.ts põe a classe toque-ativo no body) ---- */
+
+/* As dicas de teclas não servem para quem joga com o dedo. */
+.toque-ativo .hud-dicas { display: none; }
+/* O velocímetro sobe para o canto de cima, menor: embaixo ficam os pedais. */
+.toque-ativo .hud {
+  top: calc(8px + env(safe-area-inset-top));
+  bottom: auto;
+  right: calc(8px + env(safe-area-inset-right));
+  transform: scale(0.55);
+  transform-origin: top right;
+}
+/* O convite do marcador vira botão (vale como Enter). */
+.toque-ativo .hud-convite { z-index: 9; }
+.toque-ativo .hud-convite.visivel { pointer-events: auto; cursor: pointer; }
+.toque-ativo .hud-titulo-fase, .toque-ativo .hud-convite { top: 64px; }
+.toque-ativo .hud-contagem { font-size: 96px; }
+
+/* Botões das telas de chegada e pausa (funcionam com mouse e com o dedo). */
+.tela-botoes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 18px; }
+.tela-botoes button {
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  background: rgba(10, 14, 22, 0.75);
+  color: #fff;
+  font: 600 16px system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tela-botoes button:hover { filter: brightness(1.2); }
+.tela-botoes button.principal { background: #ffcc33; border-color: #ffcc33; color: #111; }
+.tela-botoes kbd { margin-left: 6px; padding: 0 5px; border: 1px solid currentColor; border-radius: 4px; font: 12px ui-monospace, monospace; opacity: 0.7; }
+/* No celular a tecla não ajuda: some do botão. */
+.toque-ativo .tela-botoes kbd { display: none; }
+.toque-ativo .tela-botoes button { padding: 14px 22px; font-size: 17px; }
+
+/* Telas baixas (celular deitado): a chegada encolhe para caber. */
+@media (max-height: 500px) {
+  .tela-fim { font-size: 15px; }
+  .tela-fim-rotulo { font-size: 38px; }
+  .tela-fim-tempo { font-size: 42px; margin: 2px 0; }
+  .tela-fim-dica { margin-top: 10px; }
+  .tela-fim-viagem { margin-top: 8px; }
+}
+
+.tela-pausa-titulo { font: 800 52px ui-monospace, monospace; letter-spacing: 6px; }
+@media (max-height: 500px) {
+  .tela-pausa-titulo { font-size: 36px; }
+}

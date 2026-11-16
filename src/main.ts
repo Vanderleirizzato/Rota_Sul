@@ -2,12 +2,15 @@ import { iniciarRapier } from './physics/MundoFisico';
 import { Jogo } from './core/Jogo';
 import { MenuPrincipal } from './ui/MenuPrincipal';
 import { BarraCarregamento } from './ui/BarraCarregamento';
+import { TELA_DE_TOQUE } from './core/Dispositivo';
 
 // Ponto de entrada. O endereço decide o que abre (ver core/Estados.ts):
 //  - sem nada          → menu principal (com a vitrine de personagens);
 //  - ?fase=fase1, ...  → a corrida dessa fase;
 //  - ?fase=teste       → a pista de teste de física (para desenvolvimento).
 async function principal(): Promise<void> {
+  // No celular, o CSS esconde as dicas de teclado e arruma o HUD para os botões da tela.
+  if (TELA_DE_TOQUE) document.body.classList.add('toque-ativo');
   const aviso = document.getElementById('carregando');
   const barra = aviso ? new BarraCarregamento(aviso) : null;
   try {

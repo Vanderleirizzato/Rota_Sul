@@ -1,0 +1,168 @@
+/* Controles na tela do celular (ver ControlesToque.ts).
+   env(safe-area-inset-*) = a margem do "entalhe" da câmera e das bordas
+   arredondadas dos celulares novos: os botões não ficam escondidos ali. */
+
+.toque {
+  position: fixed;
+  inset: 0;
+  /* Abaixo da pausa e da tela de chegada (z-index 10), que cobrem os botões. */
+  z-index: 8;
+  /* O fundo deixa o toque passar; só os botões e o volante pegam o dedo. */
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  /* Sem isso o navegador usaria o arrastar para rolar ou dar zoom na página. */
+  touch-action: none;
+  --margem-esq: calc(16px + env(safe-area-inset-left));
+  --margem-dir: calc(16px + env(safe-area-inset-right));
+  --margem-baixo: calc(14px + env(safe-area-inset-bottom));
+}
+
+/* ---- Volante (lado esquerdo) ---- */
+
+.toque-zona-volante {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 45%;
+  height: 78%;
+  pointer-events: auto;
+}
+.toque-volante-base {
+  position: absolute;
+  left: calc(var(--margem-esq) + 70px);
+  bottom: calc(var(--margem-baixo) + 10px);
+  width: 140px;
+  height: 140px;
+  margin: -70px 0 0 -70px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(10, 14, 22, 0.25);
+  display: grid;
+  place-items: center;
+  opacity: 0.5;
+  pointer-events: none;
+}
+/* Parado, a base fica no canto (o margin acima centraliza no dedo quando ativa). */
+.toque-volante-base:not(.ativo) { margin: 0; left: var(--margem-esq); }
+.toque-volante-base.ativo { opacity: 1; }
+.toque-volante-bola {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: rgba(51, 225, 255, 0.55);
+  box-shadow: 0 0 12px rgba(51, 225, 255, 0.6);
+}
+
+/* ---- Botões ---- */
+
+.toque-botao {
+  position: absolute;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  background: rgba(10, 14, 22, 0.45);
+  color: #fff;
+  font: 800 26px/1 system-ui, sans-serif;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.toque-botao[hidden] { display: none; }
+.toque-botao small { font-size: 10px; letter-spacing: 1px; font-weight: 700; opacity: 0.9; }
+.toque-botao.apertado { background: rgba(51, 225, 255, 0.45); border-color: #33e1ff; transform: scale(0.94); }
+
+/* Pedais: grandes, onde o polegar direito descansa. */
+.toque-acelerar {
+  right: var(--margem-dir);
+  bottom: var(--margem-baixo);
+  width: 104px;
+  height: 104px;
+  border-color: rgba(120, 255, 140, 0.7);
+}
+.toque-frear {
+  right: calc(var(--margem-dir) + 116px);
+  bottom: var(--margem-baixo);
+  width: 84px;
+  height: 84px;
+  border-color: rgba(255, 90, 90, 0.7);
+}
+.toque-freio-mao {
+  right: calc(var(--margem-dir) + 120px);
+  bottom: calc(var(--margem-baixo) + 96px);
+  width: 76px;
+  height: 76px;
+}
+.toque-nitro {
+  right: calc(var(--margem-dir) + 14px);
+  bottom: calc(var(--margem-baixo) + 116px);
+  width: 76px;
+  height: 76px;
+  border-color: rgba(255, 170, 51, 0.8);
+}
+.toque-entrar {
+  right: calc(var(--margem-dir) + 30px);
+  bottom: calc(var(--margem-baixo) + 204px);
+  width: 60px;
+  height: 60px;
+  font-size: 20px;
+}
+
+/* A pé não há acelerar/frear: PULAR vai para o lugar do acelerador e
+   CORRER para o do freio (onde o polegar já está). */
+.toque.a-pe .toque-freio-mao {
+  right: var(--margem-dir);
+  bottom: var(--margem-baixo);
+  width: 104px;
+  height: 104px;
+}
+.toque.a-pe .toque-nitro {
+  right: calc(var(--margem-dir) + 116px);
+  bottom: var(--margem-baixo);
+  width: 84px;
+  height: 84px;
+}
+.toque.a-pe .toque-entrar { bottom: calc(var(--margem-baixo) + 120px); }
+
+/* Botões pequenos no canto de cima. */
+.toque-pausa, .toque-camera, .toque-reposicionar, .toque-dev {
+  top: calc(10px + env(safe-area-inset-top));
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 20px;
+}
+.toque-pausa { left: var(--margem-esq); }
+.toque-camera { left: calc(var(--margem-esq) + 56px); }
+.toque-reposicionar { left: calc(var(--margem-esq) + 112px); }
+.toque-dev { left: calc(var(--margem-esq) + 168px); display: none; }
+.toque.com-dev .toque-dev { display: grid; }
+
+/* ---- Celular em pé: pede para deitar ---- */
+
+.toque-girar {
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-content: center;
+  text-align: center;
+  padding: 24px;
+  background: #05080e;
+  font: 600 20px/1.6 system-ui, sans-serif;
+  pointer-events: auto;
+}
+@media (orientation: portrait) {
+  .toque-girar { display: grid; }
+}
+
+/* Telas baixinhas (celular pequeno deitado): tudo um pouco menor. */
+@media (max-height: 380px) {
+  .toque-botao { transform: scale(0.85); transform-origin: bottom right; }
+  .toque-botao.apertado { transform: scale(0.8); }
+  .toque-pausa, .toque-camera, .toque-reposicionar, .toque-dev { transform-origin: top left; }
+}
